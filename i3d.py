@@ -5,6 +5,13 @@ The model is introduced in:
 Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset
 Joao Carreira, Andrew Zisserman
 https://arxiv.org/abs/1705.07750v1
+
+Initially written by Ese dlpbc
+Modified & improved by Neil Nie.
+
+MIT Licence. (c) Yongyang Nie, 2018 All Rights Reserved
+Contact: contact@neilnie.com
+
 """
 
 from __future__ import print_function
@@ -12,7 +19,6 @@ from __future__ import absolute_import
 
 import warnings
 
-import numpy as np
 
 from keras.models import Model
 from keras import layers
@@ -25,51 +31,275 @@ from keras.layers import MaxPooling3D
 from keras.layers import AveragePooling3D
 from keras.layers import Dropout
 from keras.layers import Reshape
-from keras.layers import Lambda
-from keras.layers import GlobalAveragePooling3D
 
-from keras.engine.topology import get_source_inputs
-from keras.utils import layer_utils
-from keras.utils.data_utils import get_file
+from keras.models import load_model
+from keras.callbacks import TensorBoard
+import datetime
 from keras import backend as K
 
 
 # WEIGHTS_NAME = ['rgb_kinetics_only', 'flow_kinetics_only', 'rgb_imagenet_and_kinetics', 'flow_imagenet_and_kinetics']
-#
-# # path to pretrained models with top (classification layer)
-# WEIGHTS_PATH = {
-#     'rgb_kinetics_only' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/rgb_inception_i3d_kinetics_only_tf_dim_ordering_tf_kernels.h5',
-#     'flow_kinetics_only' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/flow_inception_i3d_kinetics_only_tf_dim_ordering_tf_kernels.h5',
-#     'rgb_imagenet_and_kinetics' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/rgb_inception_i3d_imagenet_and_kinetics_tf_dim_ordering_tf_kernels.h5',
-#     'flow_imagenet_and_kinetics' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/flow_inception_i3d_imagenet_and_kinetics_tf_dim_ordering_tf_kernels.h5'
-# }
-#
-# # path to pretrained models with no top (no classification layer)
-# WEIGHTS_PATH_NO_TOP = {
-#     'rgb_kinetics_only' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/rgb_inception_i3d_kinetics_only_tf_dim_ordering_tf_kernels_no_top.h5',
-#     'flow_kinetics_only' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/flow_inception_i3d_kinetics_only_tf_dim_ordering_tf_kernels_no_top.h5',
-#     'rgb_imagenet_and_kinetics' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/rgb_inception_i3d_imagenet_and_kinetics_tf_dim_ordering_tf_kernels_no_top.h5',
-#     'flow_imagenet_and_kinetics' : 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/flow_inception_i3d_imagenet_and_kinetics_tf_dim_ordering_tf_kernels_no_top.h5'
-# }
-
 
 
 class i3d:
 
+    def __init__(self, include_top=True, weights_path=None,
+                 input_shape=None, dropout_prob=0.0, endpoint_logit=True, classes=1):
 
-    def __init__(self, include_top=True, weights_path=None, input_tensor=None,
-                     input_shape=None, dropout_prob=0.0, endpoint_logit=True, classes=1):
+        '''Instantiates the Inflated 3D Inception v1 architecture.
 
-        
-        self.include_top = include_top
-        self.input_tensor = input_tensor
+        Optionally loads weights pre-trained on Kinetics. Note that when using TensorFlow,
+        Always channel last. The model and the weights are compatible with both
+        TensorFlow. The data format convention used by the model is the one
+        specified in your Keras config file.
+        Note that the default input frame(image) size for this model is 224x224.
+
+        :param weights_path: one of `None` (random initialization)
+        :param input_shape: optional shape tuple, only to be specified
+                if `include_top` is False (otherwise the input shape should have exactly
+                3 inputs channels. NUM_FRAMES should be no smaller than 8. The authors
+                used 64 frames per example for training and testing on kinetics dataset
+                Width and height should be no smaller than 32.
+                i.e.: `(64, 150, 150, 3)` would be one valid value.
+        :param dropout_prob: optional, dropout probability applied in dropout layer
+                after global average pooling layer.
+                0.0 means no dropout is applied, 1.0 means dropout is applied to all features.
+                Note: Since Dropout is applied just before the classification
+                layer, it is only useful when `include_top` is set to True.
+        :param endpoint_logit: (boolean) optional. If True, the model's forward pass
+                will end at producing logits. Otherwise, softmax is applied after producing
+                the logits to produce the class probabilities prediction. Setting this parameter
+                to True is particularly useful when you want to combine results of rgb model
+                and optical flow model.
+                - `True` end model forward pass at logit output
+                - `False` go further after logit to produce softmax predictions
+                Note: This parameter is only useful when `include_top` is set to True.
+        :param classes: For regression (i.e. behavorial cloning) 1 is the default value.
+                optional number of classes to classify images into, only to be specified
+                if `include_top` is True, and if no `weights` argument is specified.
+        '''
+
         self.input_shape = input_shape
         self.dropout_prob = dropout_prob
         self.endpoint_logit = endpoint_logit
         self.classes = classes
+        self.weight_path = weights_path
 
-    def conv3d_bn(self, x, filters, num_frames, num_row, num_col, padding='same', strides=(1, 1, 1),
-                  use_bias=False, use_activation_fn=True, use_bn=True, name=None):
+        if weights_path:
+            self.model = load_model(self.weight_path)
+        else:
+
+            input_shape = self._obtain_input_shape(self.input_shape, default_frame_size=224,
+                                                   min_frame_size=32, default_num_frames=64,
+                                                   min_num_frames=8, data_format=K.image_data_format()) # weights=weights
+
+            img_input = Input(shape=input_shape)
+
+            self.model = self.create_model(img_input)
+
+    def summary(self):
+        print(self.model.summary())
+
+    def train(self, train_gen, val_gen, epochs=10, epoch_steps=5000, val_steps=1000, log_path="logs/i3d/"):
+
+        '''training the model
+
+        :param train_gen: training generator. For details, please read the
+        implementation in helper.py
+        :param val_gen: validation generator, for now it's required.
+        :param epoch: number of training epochs.
+        :param epoch_steps: number of training steps per epoch. (!= batch_size)
+        :param val_steps: number of validation steps
+        :param log_path: training log path.
+        :return:
+        '''
+
+        tensorboard = TensorBoard(log_dir=(log_path + "/{}".format(datetime.datetime.now())))
+        self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps, epochs=epochs, verbose=1, validation_data=val_gen, validation_steps=val_steps, callbacks=[tensorboard])
+
+    def create_model(self, img_input):
+
+        '''create and return the i3d model
+
+        :return: A Keras model instance.
+        :raises: ValueError: in case of invalid argument for `weights`,
+                or invalid input shape.
+        '''
+
+        # Determine proper input shape
+
+        channel_axis = 4
+
+        # Downsampling via convolution (spatial and temporal)
+        x = self.conv3d_bath_norm(img_input, 64, 7, 7, 7, strides=(2, 2, 2), padding='same', name='Conv3d_1a_7x7')
+
+        # Downsampling (spatial only)
+        x = MaxPooling3D((1, 3, 3), strides=(1, 2, 2), padding='same', name='MaxPool2d_2a_3x3')(x)
+        x = self.conv3d_bath_norm(x, 64, 1, 1, 1, strides=(1, 1, 1), padding='same', name='Conv3d_2b_1x1')
+        x = self.conv3d_bath_norm(x, 192, 3, 3, 3, strides=(1, 1, 1), padding='same', name='Conv3d_2c_3x3')
+
+        # Downsampling (spatial only)
+        x = MaxPooling3D((1, 3, 3), strides=(1, 2, 2), padding='same', name='MaxPool2d_3a_3x3')(x)
+
+        # Mixed 3b
+        branch_0 = self.conv3d_bath_norm(x, 64, 1, 1, 1, padding='same', name='Conv3d_3b_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 96, 1, 1, 1, padding='same', name='Conv3d_3b_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 128, 3, 3, 3, padding='same', name='Conv3d_3b_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 16, 1, 1, 1, padding='same', name='Conv3d_3b_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 32, 3, 3, 3, padding='same', name='Conv3d_3b_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_3b_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 32, 1, 1, 1, padding='same', name='Conv3d_3b_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_3b')
+
+        # Mixed 3c
+        branch_0 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_3c_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_3c_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 192, 3, 3, 3, padding='same', name='Conv3d_3c_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 32, 1, 1, 1, padding='same', name='Conv3d_3c_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 96, 3, 3, 3, padding='same', name='Conv3d_3c_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_3c_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_3c_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_3c')
+
+        # Downsampling (spatial and temporal)
+        x = MaxPooling3D((3, 3, 3), strides=(2, 2, 2), padding='same', name='MaxPool2d_4a_3x3')(x)
+
+        # Mixed 4b
+        branch_0 = self.conv3d_bath_norm(x, 192, 1, 1, 1, padding='same', name='Conv3d_4b_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 96, 1, 1, 1, padding='same', name='Conv3d_4b_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 208, 3, 3, 3, padding='same', name='Conv3d_4b_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 16, 1, 1, 1, padding='same', name='Conv3d_4b_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 48, 3, 3, 3, padding='same', name='Conv3d_4b_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4b_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4b_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4b')
+
+        # Mixed 4c
+        branch_0 = self.conv3d_bath_norm(x, 160, 1, 1, 1, padding='same', name='Conv3d_4c_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 112, 1, 1, 1, padding='same', name='Conv3d_4c_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 224, 3, 3, 3, padding='same', name='Conv3d_4c_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 24, 1, 1, 1, padding='same', name='Conv3d_4c_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4c_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4c_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4c_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4c')
+
+        # Mixed 4d
+        branch_0 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_4d_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_4d_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 256, 3, 3, 3, padding='same', name='Conv3d_4d_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 24, 1, 1, 1, padding='same', name='Conv3d_4d_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4d_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4d_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4d_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4d')
+
+        # Mixed 4e
+        branch_0 = self.conv3d_bath_norm(x, 112, 1, 1, 1, padding='same', name='Conv3d_4e_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 144, 1, 1, 1, padding='same', name='Conv3d_4e_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 288, 3, 3, 3, padding='same', name='Conv3d_4e_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 32, 1, 1, 1, padding='same', name='Conv3d_4e_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4e_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4e_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4e_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4e')
+
+        # Mixed 4f
+        branch_0 = self.conv3d_bath_norm(x, 256, 1, 1, 1, padding='same', name='Conv3d_4f_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 160, 1, 1, 1, padding='same', name='Conv3d_4f_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 320, 3, 3, 3, padding='same', name='Conv3d_4f_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 32, 1, 1, 1, padding='same', name='Conv3d_4f_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 128, 3, 3, 3, padding='same', name='Conv3d_4f_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4f_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 128, 1, 1, 1, padding='same', name='Conv3d_4f_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4f')
+
+        # Downsampling (spatial and temporal)
+        x = MaxPooling3D((2, 2, 2), strides=(2, 2, 2), padding='same', name='MaxPool2d_5a_2x2')(x)
+
+        # Mixed 5b
+        branch_0 = self.conv3d_bath_norm(x, 256, 1, 1, 1, padding='same', name='Conv3d_5b_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 160, 1, 1, 1, padding='same', name='Conv3d_5b_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 320, 3, 3, 3, padding='same', name='Conv3d_5b_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 32, 1, 1, 1, padding='same', name='Conv3d_5b_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 128, 3, 3, 3, padding='same', name='Conv3d_5b_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_5b_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 128, 1, 1, 1, padding='same', name='Conv3d_5b_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_5b')
+
+        # Mixed 5c
+        branch_0 = self.conv3d_bath_norm(x, 384, 1, 1, 1, padding='same', name='Conv3d_5c_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 192, 1, 1, 1, padding='same', name='Conv3d_5c_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 384, 3, 3, 3, padding='same', name='Conv3d_5c_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 48, 1, 1, 1, padding='same', name='Conv3d_5c_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 128, 3, 3, 3, padding='same', name='Conv3d_5c_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_5c_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 128, 1, 1, 1, padding='same', name='Conv3d_5c_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_5c')
+
+        # Classification block
+        x = AveragePooling3D((2, 7, 7), strides=(1, 1, 1), padding='valid', name='global_avg_pool')(x)
+        x = Dropout(self.dropout_prob)(x)
+
+        x = self.conv3d_bath_norm(x, self.classes, 1, 1, 1, padding='same', use_bias=True, use_activation_fn=False, use_bn=False, name='Conv3d_6a_1x1')
+
+        num_frames_remaining = int(x.shape[1])
+        x = Reshape((num_frames_remaining, self.classes))(x)
+
+        x = Dense(self.classes)(x)
+        # logits (raw scores for each class)
+        # x = Lambda(lambda x: K.mean(x, axis=1, keepdims=False), output_shape=lambda s: (s[0], s[2]))(x)
+
+        # if not self.endpoint_logit:
+        #     x = Activation('softmax', name='prediction')(x)
+        # ===
+
+        inputs = img_input
+
+        # create model
+        model = Model(inputs, x, name='i3d_inception')
+
+        return model
+
+    @staticmethod
+    def conv3d_bath_norm(x, filters, num_frames, num_row, num_col, padding='same', strides=(1, 1, 1),
+                         use_bias=False, use_activation_fn=True, use_bn=True, name=None):
 
         """Utility function to apply conv3d + BN.
 
@@ -98,7 +328,8 @@ class i3d:
             bn_name = None
             conv_name = None
 
-        x = Conv3D(filters, (num_frames, num_row, num_col), strides=strides, padding=padding, use_bias=use_bias, name=conv_name)(x)
+        x = Conv3D(filters, (num_frames, num_row, num_col), strides=strides, padding=padding, use_bias=use_bias,
+                   name=conv_name)(x)
 
         if use_bn:
             bn_axis = 4
@@ -109,271 +340,9 @@ class i3d:
 
         return x
 
-    def create_model(self):
-
-        """Instantiates the Inflated 3D Inception v1 architecture.
-
-        Optionally loads weights pre-trained
-        on Kinetics. Note that when using TensorFlow,
-        for best performance you should set
-        `image_data_format='channels_last'` in your Keras config
-        at ~/.keras/keras.json.
-        The model and the weights are compatible with both
-        TensorFlow and Theano. The data format
-        convention used by the model is the one
-        specified in your Keras config file.
-        Note that the default input frame(image) size for this model is 224x224.
-
-        # Arguments
-            include_top: whether to include the the classification
-                layer at the top of the network.
-            weights: one of `None` (random initialization)
-                or 'kinetics_only' (pre-training on Kinetics dataset only).
-                or 'imagenet_and_kinetics' (pre-training on ImageNet and Kinetics datasets).
-            input_tensor: optional Keras tensor (i.e. output of `layers.Input()`)
-                to use as image input for the model.
-            input_shape: optional shape tuple, only to be specified
-                if `include_top` is False (otherwise the input shape
-                has to be `(NUM_FRAMES, 224, 224, 3)` (with `channels_last` data format)
-                It should have exactly 3 inputs channels.
-                NUM_FRAMES should be no smaller than 8. The authors used 64
-                frames per example for training and testing on kinetics dataset
-                Also, Width and height should be no smaller than 32.
-                E.g. `(64, 150, 150, 3)` would be one valid value.
-            dropout_prob: optional, dropout probability applied in dropout layer
-                after global average pooling layer.
-                0.0 means no dropout is applied, 1.0 means dropout is applied to all features.
-                Note: Since Dropout is applied just before the classification
-                layer, it is only useful when `include_top` is set to True.
-            endpoint_logit: (boolean) optional. If True, the model's forward pass
-                will end at producing logits. Otherwise, softmax is applied after producing
-                the logits to produce the class probabilities prediction. Setting this parameter
-                to True is particularly useful when you want to combine results of rgb model
-                and optical flow model.
-                - `True` end model forward pass at logit output
-                - `False` go further after logit to produce softmax predictions
-                Note: This parameter is only useful when `include_top` is set to True.
-            classes: optional number of classes to classify images
-                into, only to be specified if `include_top` is True, and
-                if no `weights` argument is specified.
-
-        # Returns
-            A Keras model instance.
-
-        # Raises
-            ValueError: in case of invalid argument for `weights`,
-                or invalid input shape.
-        """
-        # if not (weights in WEIGHTS_NAME or weights is None or os.path.exists(weights)):
-        #     raise ValueError('The `weights` argument should be either '
-        #                      '`None` (random initialization) or %s' %
-        #                      str(WEIGHTS_NAME) + ' ' 'or a valid path to a file containing `weights` values')
-        #
-        # if weights in WEIGHTS_NAME and include_top and classes != 400:
-        #     raise ValueError('If using `weights` as one of these %s, with `include_top`'
-        #                      ' as true, `classes` should be 400' % str(WEIGHTS_NAME))
-
-        # Determine proper input shape
-        input_shape = self._obtain_input_shape(self.input_shape,
-                                          default_frame_size=224,
-                                          min_frame_size=32,
-                                          default_num_frames=64,
-                                          min_num_frames=8,
-                                          data_format=K.image_data_format(),
-                                          require_flatten=self.include_top) # weights=weights
-
-        if self.input_tensor is None:
-            img_input = Input(shape=input_shape)
-        else:
-            if not K.is_keras_tensor(self.input_tensor):
-                img_input = Input(tensor=self.input_tensor, shape=input_shape)
-            else:
-                img_input = self.input_tensor
-
-        channel_axis = 4
-
-        # Downsampling via convolution (spatial and temporal)
-        x = self.conv3d_bn(img_input, 64, 7, 7, 7, strides=(2, 2, 2), padding='same', name='Conv3d_1a_7x7')
-
-        # Downsampling (spatial only)
-        x = MaxPooling3D((1, 3, 3), strides=(1, 2, 2), padding='same', name='MaxPool2d_2a_3x3')(x)
-        x = self.conv3d_bn(x, 64, 1, 1, 1, strides=(1, 1, 1), padding='same', name='Conv3d_2b_1x1')
-        x = self.conv3d_bn(x, 192, 3, 3, 3, strides=(1, 1, 1), padding='same', name='Conv3d_2c_3x3')
-
-        # Downsampling (spatial only)
-        x = MaxPooling3D((1, 3, 3), strides=(1, 2, 2), padding='same', name='MaxPool2d_3a_3x3')(x)
-
-        # Mixed 3b
-        branch_0 = self.conv3d_bn(x, 64, 1, 1, 1, padding='same', name='Conv3d_3b_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 96, 1, 1, 1, padding='same', name='Conv3d_3b_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 128, 3, 3, 3, padding='same', name='Conv3d_3b_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 16, 1, 1, 1, padding='same', name='Conv3d_3b_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 32, 3, 3, 3, padding='same', name='Conv3d_3b_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_3b_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 32, 1, 1, 1, padding='same', name='Conv3d_3b_3b_1x1')
-
-        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_3b')
-
-        # Mixed 3c
-        branch_0 = self.conv3d_bn(x, 128, 1, 1, 1, padding='same', name='Conv3d_3c_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 128, 1, 1, 1, padding='same', name='Conv3d_3c_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 192, 3, 3, 3, padding='same', name='Conv3d_3c_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 32, 1, 1, 1, padding='same', name='Conv3d_3c_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 96, 3, 3, 3, padding='same', name='Conv3d_3c_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_3c_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_3c_3b_1x1')
-
-        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_3c')
-
-        # Downsampling (spatial and temporal)
-        x = MaxPooling3D((3, 3, 3), strides=(2, 2, 2), padding='same', name='MaxPool2d_4a_3x3')(x)
-
-        # Mixed 4b
-        branch_0 = self.conv3d_bn(x, 192, 1, 1, 1, padding='same', name='Conv3d_4b_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 96, 1, 1, 1, padding='same', name='Conv3d_4b_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 208, 3, 3, 3, padding='same', name='Conv3d_4b_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 16, 1, 1, 1, padding='same', name='Conv3d_4b_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 48, 3, 3, 3, padding='same', name='Conv3d_4b_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4b_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4b_3b_1x1')
-
-        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4b')
-
-        # Mixed 4c
-        branch_0 = self.conv3d_bn(x, 160, 1, 1, 1, padding='same', name='Conv3d_4c_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 112, 1, 1, 1, padding='same', name='Conv3d_4c_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 224, 3, 3, 3, padding='same', name='Conv3d_4c_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 24, 1, 1, 1, padding='same', name='Conv3d_4c_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4c_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4c_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4c_3b_1x1')
-
-        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4c')
-
-        # Mixed 4d
-        branch_0 = self.conv3d_bn(x, 128, 1, 1, 1, padding='same', name='Conv3d_4d_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 128, 1, 1, 1, padding='same', name='Conv3d_4d_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 256, 3, 3, 3, padding='same', name='Conv3d_4d_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 24, 1, 1, 1, padding='same', name='Conv3d_4d_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4d_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4d_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4d_3b_1x1')
-
-        x = layers.concatenate(
-            [branch_0, branch_1, branch_2, branch_3],
-            axis=channel_axis,
-            name='Mixed_4d')
-
-        # Mixed 4e
-        branch_0 = self.conv3d_bn(x, 112, 1, 1, 1, padding='same', name='Conv3d_4e_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 144, 1, 1, 1, padding='same', name='Conv3d_4e_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 288, 3, 3, 3, padding='same', name='Conv3d_4e_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 32, 1, 1, 1, padding='same', name='Conv3d_4e_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4e_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4e_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4e_3b_1x1')
-
-        x = layers.concatenate(
-            [branch_0, branch_1, branch_2, branch_3],
-            axis=channel_axis,
-            name='Mixed_4e')
-
-        # Mixed 4f
-        branch_0 = self.conv3d_bn(x, 256, 1, 1, 1, padding='same', name='Conv3d_4f_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 160, 1, 1, 1, padding='same', name='Conv3d_4f_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 320, 3, 3, 3, padding='same', name='Conv3d_4f_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 32, 1, 1, 1, padding='same', name='Conv3d_4f_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 128, 3, 3, 3, padding='same', name='Conv3d_4f_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4f_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 128, 1, 1, 1, padding='same', name='Conv3d_4f_3b_1x1')
-
-        x = layers.concatenate(
-            [branch_0, branch_1, branch_2, branch_3],
-            axis=channel_axis,
-            name='Mixed_4f')
-
-        # Downsampling (spatial and temporal)
-        x = MaxPooling3D((2, 2, 2), strides=(2, 2, 2), padding='same', name='MaxPool2d_5a_2x2')(x)
-
-        # Mixed 5b
-        branch_0 = self.conv3d_bn(x, 256, 1, 1, 1, padding='same', name='Conv3d_5b_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 160, 1, 1, 1, padding='same', name='Conv3d_5b_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 320, 3, 3, 3, padding='same', name='Conv3d_5b_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 32, 1, 1, 1, padding='same', name='Conv3d_5b_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 128, 3, 3, 3, padding='same', name='Conv3d_5b_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_5b_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 128, 1, 1, 1, padding='same', name='Conv3d_5b_3b_1x1')
-
-        x = layers.concatenate(
-            [branch_0, branch_1, branch_2, branch_3],
-            axis=channel_axis,
-            name='Mixed_5b')
-
-        # Mixed 5c
-        branch_0 = self.conv3d_bn(x, 384, 1, 1, 1, padding='same', name='Conv3d_5c_0a_1x1')
-
-        branch_1 = self.conv3d_bn(x, 192, 1, 1, 1, padding='same', name='Conv3d_5c_1a_1x1')
-        branch_1 = self.conv3d_bn(branch_1, 384, 3, 3, 3, padding='same', name='Conv3d_5c_1b_3x3')
-
-        branch_2 = self.conv3d_bn(x, 48, 1, 1, 1, padding='same', name='Conv3d_5c_2a_1x1')
-        branch_2 = self.conv3d_bn(branch_2, 128, 3, 3, 3, padding='same', name='Conv3d_5c_2b_3x3')
-
-        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_5c_3a_3x3')(x)
-        branch_3 = self.conv3d_bn(branch_3, 128, 1, 1, 1, padding='same', name='Conv3d_5c_3b_1x1')
-
-        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_5c')
-
-        # Classification block
-        x = AveragePooling3D((2, 7, 7), strides=(1, 1, 1), padding='valid', name='global_avg_pool')(x)
-        x = Dropout(self.dropout_prob)(x)
-
-        x = self.conv3d_bn(x, self.classes, 1, 1, 1, padding='same', use_bias=True, use_activation_fn=False,
-                           use_bn=False, name='Conv3d_6a_1x1')
-
-        num_frames_remaining = int(x.shape[1])
-        x = Reshape((num_frames_remaining, self.classes))(x)
-
-        # logits (raw scores for each class)
-        x = Lambda(lambda x: K.mean(x, axis=1, keepdims=False),
-                   output_shape=lambda s: (s[0], s[2]))(x)
-
-        if not self.endpoint_logit:
-            x = Activation('softmax', name='prediction')(x)
-        # ===
-
-        inputs = img_input
-
-        # create model
-        model = Model(inputs, x, name='i3d_inception')
-
-        return model
-
-    def _obtain_input_shape(self, input_shape, default_frame_size, min_frame_size, default_num_frames, min_num_frames,
-                            data_format, require_flatten, weights=None):
+    @staticmethod
+    def _obtain_input_shape(input_shape, default_frame_size, min_frame_size, default_num_frames,
+                            min_num_frames, data_format, weights=None):
 
         """Internal utility to compute/validate the model's input shape.
         (Adapted from `keras/applications/imagenet_utils.py`)
@@ -418,7 +387,7 @@ class i3d:
         else:
             default_shape = (default_num_frames, default_frame_size, default_frame_size, 3)
 
-        if (weights == 'kinetics_only' or weights == 'imagenet_and_kinetics') and require_flatten:
+        if (weights == 'kinetics_only' or weights == 'imagenet_and_kinetics'):
             if input_shape is not None:
                 if input_shape != default_shape:
                     raise ValueError('When setting`include_top=True` '
@@ -448,71 +417,8 @@ class i3d:
                                                                                        '`input_shape=' + str(input_shape) + '`')
 
         else:
-            if require_flatten:
-                input_shape = default_shape
-            else:
-                input_shape = (None, None, None, 3)
+            input_shape = default_shape
 
-        if require_flatten:
-            if None in input_shape:
-                raise ValueError('If `include_top` is True, '
-                                 'you should specify a static `input_shape`. '
-                                 'Got `input_shape=' + str(input_shape) + '`')
         return input_shape
 
 
-
-# def load_model_weights(self, model_name):
-#
-#     # load weights
-#     if weights in WEIGHTS_NAME:
-#         if weights == WEIGHTS_NAME[0]:  # rgb_kinetics_only
-#             if include_top:
-#                 weights_url = WEIGHTS_PATH['rgb_kinetics_only']
-#                 model_name = 'i3d_inception_rgb_kinetics_only.h5'
-#             else:
-#                 weights_url = WEIGHTS_PATH_NO_TOP['rgb_kinetics_only']
-#                 model_name = 'i3d_inception_rgb_kinetics_only_no_top.h5'
-#
-#         elif weights == WEIGHTS_NAME[1]:  # flow_kinetics_only
-#             if include_top:
-#                 weights_url = WEIGHTS_PATH['flow_kinetics_only']
-#                 model_name = 'i3d_inception_flow_kinetics_only.h5'
-#             else:
-#                 weights_url = WEIGHTS_PATH_NO_TOP['flow_kinetics_only']
-#                 model_name = 'i3d_inception_flow_kinetics_only_no_top.h5'
-#
-#         elif weights == WEIGHTS_NAME[2]:  # rgb_imagenet_and_kinetics
-#             if include_top:
-#                 weights_url = WEIGHTS_PATH['rgb_imagenet_and_kinetics']
-#                 model_name = 'i3d_inception_rgb_imagenet_and_kinetics.h5'
-#             else:
-#                 weights_url = WEIGHTS_PATH_NO_TOP['rgb_imagenet_and_kinetics']
-#                 model_name = 'i3d_inception_rgb_imagenet_and_kinetics_no_top.h5'
-#
-#         elif weights == WEIGHTS_NAME[3]:  # flow_imagenet_and_kinetics
-#             if include_top:
-#                 weights_url = WEIGHTS_PATH['flow_imagenet_and_kinetics']
-#                 model_name = 'i3d_inception_flow_imagenet_and_kinetics.h5'
-#             else:
-#                 weights_url = WEIGHTS_PATH_NO_TOP['flow_imagenet_and_kinetics']
-#                 model_name = 'i3d_inception_flow_imagenet_and_kinetics_no_top.h5'
-#
-#         downloaded_weights_path = get_file(model_name, weights_url, cache_subdir='models')
-#         model.load_weights(downloaded_weights_path)
-#
-#         if K.backend() == 'theano':
-#             layer_utils.convert_all_kernels_in_model(model)
-#
-#         if K.image_data_format() == 'channels_first' and K.backend() == 'tensorflow':
-#             warnings.warn('You are using the TensorFlow backend, yet you '
-#                           'are using the Theano '
-#                           'image data format convention '
-#                           '(`image_data_format="channels_first"`). '
-#                           'For best performance, set '
-#                           '`image_data_format="channels_last"` in '
-#                           'your keras config '
-#                           'at ~/.keras/keras.json.')
-#
-#     elif weights is not None:
-#         model.load_weights(weights)
