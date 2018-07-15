@@ -31,6 +31,8 @@ from keras.layers import MaxPooling3D
 from keras.layers import AveragePooling3D
 from keras.layers import Dropout
 from keras.layers import Reshape
+from keras.optimizers import Adam
+from keras.layers import Flatten
 
 from keras.models import load_model
 from keras.callbacks import TensorBoard
@@ -38,13 +40,12 @@ import datetime
 from keras import backend as K
 
 
-# WEIGHTS_NAME = ['rgb_kinetics_only', 'flow_kinetics_only', 'rgb_imagenet_and_kinetics', 'flow_imagenet_and_kinetics']
-
-
 class i3d:
 
-    def __init__(self, include_top=True, weights_path=None,
+    def __init__(self, weights_path=None,
                  input_shape=None, dropout_prob=0.0, endpoint_logit=True, classes=1):
+
+        # type: (weights_path, input_shape, dropout_prob, endpoint_logit, classes) -> None
 
         '''Instantiates the Inflated 3D Inception v1 architecture.
 
@@ -85,22 +86,22 @@ class i3d:
         self.classes = classes
         self.weight_path = weights_path
 
+        input_shape = self._obtain_input_shape(self.input_shape, default_frame_size=224,
+                                               min_frame_size=32, default_num_frames=64,
+                                               min_num_frames=8, data_format=K.image_data_format())  # weights=weights
+
+        img_input = Input(shape=input_shape)
+        self.model = self.create_model(img_input)
+
         if weights_path:
-            self.model = load_model(self.weight_path)
-        else:
-
-            input_shape = self._obtain_input_shape(self.input_shape, default_frame_size=224,
-                                                   min_frame_size=32, default_num_frames=64,
-                                                   min_num_frames=8, data_format=K.image_data_format()) # weights=weights
-
-            img_input = Input(shape=input_shape)
-
-            self.model = self.create_model(img_input)
+            self.model.load_weights(weights_path)
+            print("loaded weights:" + weights_path)
 
     def summary(self):
         print(self.model.summary())
 
-    def train(self, train_gen, val_gen, epochs=10, epoch_steps=5000, val_steps=1000, log_path="logs/i3d/"):
+    def train(self, train_gen, val_gen, epochs=10, epoch_steps=5000, val_steps=1000, log_path="logs/i3d/", save_path=None):
+
 
         '''training the model
 
@@ -111,19 +112,24 @@ class i3d:
         :param epoch_steps: number of training steps per epoch. (!= batch_size)
         :param val_steps: number of validation steps
         :param log_path: training log path.
-        :return:
         '''
 
+        if save_path == None:
+            print("[WARNING]: trained model will not be saved. Please specify save_path")
+
         tensorboard = TensorBoard(log_dir=(log_path + "/{}".format(datetime.datetime.now())))
-        self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps, epochs=epochs, verbose=1, validation_data=val_gen, validation_steps=val_steps, callbacks=[tensorboard])
+        self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
+                                 validation_data=val_gen, validation_steps=val_steps, epochs=epochs,
+                                 verbose=1, callbacks=[tensorboard])
+
+        self.model.save(save_path)
+
 
     def create_model(self, img_input):
 
         '''create and return the i3d model
-
+        :param: img_input: input shape of the network.
         :return: A Keras model instance.
-        :raises: ValueError: in case of invalid argument for `weights`,
-                or invalid input shape.
         '''
 
         # Determine proper input shape
@@ -281,8 +287,9 @@ class i3d:
 
         num_frames_remaining = int(x.shape[1])
         x = Reshape((num_frames_remaining, self.classes))(x)
-
+        x = Flatten()(x)
         x = Dense(self.classes)(x)
+
         # logits (raw scores for each class)
         # x = Lambda(lambda x: K.mean(x, axis=1, keepdims=False), output_shape=lambda s: (s[0], s[2]))(x)
 
@@ -294,33 +301,38 @@ class i3d:
 
         # create model
         model = Model(inputs, x, name='i3d_inception')
+        # optimizer = Adam(lr=1e-5, decay=1e-6)
+        model.compile(loss=self.root_mean_squared_error, optimizer='adadelta', metrics=['rmse'])
 
         return model
+
+    @staticmethod
+    def root_mean_squared_error(y_true, y_pred):
+        return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
 
     @staticmethod
     def conv3d_bath_norm(x, filters, num_frames, num_row, num_col, padding='same', strides=(1, 1, 1),
                          use_bias=False, use_activation_fn=True, use_bn=True, name=None):
 
-        """Utility function to apply conv3d + BN.
 
-        # Arguments
-            x: input tensor.
-            filters: filters in `Conv3D`.
-            num_frames: frames (time depth) of the convolution kernel.
-            num_row: height of the convolution kernel.
-            num_col: width of the convolution kernel.
-            padding: padding mode in `Conv3D`.
-            strides: strides in `Conv3D`.
-            use_bias: use bias or not
-            use_activation_fn: use an activation function or not.
-            use_bn: use batch normalization or not.
-            name: name of the ops; will become `name + '_conv'`
+        '''
+
+        :param x: input tensor.
+        :param filters: filters in `Conv3D`.
+        :param num_frames: frames (time depth) of the convolution kernel.
+        :param num_row: height of the convolution kernel.
+        :param num_col: width of the convolution kernel.
+        :param padding: padding mode in `Conv3D`.
+        :param strides: strides in `Conv3D`.
+        :param use_bias: use bias or not
+        :param use_activation_fn: use an activation function or not.
+        :param use_bn: use batch normalization or not.
+        :param name: name of the ops; will become `name + '_conv'`
                 for the convolution and `name + '_bn'` for the
                 batch norm layer.
+        :return: Output tensor after applying `Conv3D` and `BatchNormalization`.
+        '''
 
-        # Returns
-            Output tensor after applying `Conv3D` and `BatchNormalization`.
-        """
         if name is not None:
             bn_name = name + '_bn'
             conv_name = name + '_conv'

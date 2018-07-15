@@ -277,7 +277,6 @@ def validation_batch_generator(data, batch_size):
 
             for i in range(start, end):
                 center_path = '/home/neil/dataset/steering/test/center/' + str(data['frame_id'].loc[i]) + ".jpg"
-                # center_path = str(data['frame_id'].loc[i])
                 image = load_image(center_path)
                 imgs[i - start] = image
 
