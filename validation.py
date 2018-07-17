@@ -13,7 +13,6 @@ import numpy as np
 import helper
 import math
 import time
-from keras.models import load_model
 
 
 def validation_score(model_path):
@@ -69,6 +68,6 @@ def validation_score(model_path):
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('i3d_32_5.h5')
+    score = validation_score('i3d_32_12.h5')
     print("Finished!")
     print(score)

@@ -100,7 +100,7 @@ class i3d:
     def summary(self):
         print(self.model.summary())
 
-    def train(self, train_gen, val_gen, epochs=10, epoch_steps=5000, val_steps=1000, log_path="logs/i3d/", save_path=None):
+    def train(self, train_gen, val_gen, epochs=10, epoch_steps=5000, val_steps=1000, log_path="logs/i3d_speed/", save_path=None):
 
 
         '''training the model
@@ -119,8 +119,8 @@ class i3d:
 
         tensorboard = TensorBoard(log_dir=(log_path + "/{}".format(datetime.datetime.now())))
         self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
-                                 validation_data=val_gen, validation_steps=val_steps, epochs=epochs,
-                                 verbose=1, callbacks=[tensorboard])
+                                  epochs=epochs,
+                                 verbose=1, callbacks=[tensorboard]) # validation_data=val_gen, validation_steps=val_steps,
 
         self.model.save(save_path)
 
@@ -301,8 +301,9 @@ class i3d:
 
         # create model
         model = Model(inputs, x, name='i3d_inception')
-        # optimizer = Adam(lr=1e-5, decay=1e-6)
-        model.compile(loss=self.root_mean_squared_error, optimizer='adadelta', metrics=['rmse'])
+        optimizer = Adam(lr=1e-5, decay=1e-6)
+        # self.root_mean_squared_error
+        model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
 
         return model
 
@@ -313,7 +314,6 @@ class i3d:
     @staticmethod
     def conv3d_bath_norm(x, filters, num_frames, num_row, num_col, padding='same', strides=(1, 1, 1),
                          use_bias=False, use_activation_fn=True, use_bn=True, name=None):
-
 
         '''
 
