@@ -118,7 +118,6 @@ def augument(images, angle):
         for idx in range(len(images)):
             image = images[idx].astype(np.uint8)
             images[idx] = flip_image(image)
-        angle = -1 * angle
 
     return images, angle
 
@@ -227,7 +226,7 @@ def comma_validation_generator(data, batch_size):
                 end = index + configs.LENGTH
 
             for i in range(start, end):
-                center_path = "/home/neil/dataset/speedchallenge/data/val" + str(data[i][1])
+                center_path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
                 image = load_image(center_path)
                 imgs[i - start] = image
 
@@ -281,7 +280,7 @@ def comma_batch_generator(data, batch_size, augment):
                 end = index + configs.LENGTH
 
             for i in range(start, end):
-                center_path = "/home/neil/dataset/speedchallenge/data/train" + str(data[i][1])
+                center_path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
                 image = load_image(center_path)
                 imgs[i - start] = image
 
@@ -293,6 +292,57 @@ def comma_batch_generator(data, batch_size, augment):
 
             images[c] = imgs
             labels[c] = angle
+
+            c += 1
+
+            if c == batch_size:
+                break
+
+        yield images, labels
+
+
+def comma_flow_batch_generator(data, batch_size):
+
+    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2], dtype=np.int32)
+    labels = np.empty([batch_size])
+
+    while True:
+
+        c = 0
+
+        for index in np.random.permutation(data.shape[0]):
+
+            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2], dtype=np.int32)
+
+            if index < configs.LENGTH + 1:
+                start = 0
+                end = configs.LENGTH + 1
+            elif index + configs.LENGTH + 1 >= len(data):
+                start = len(data) - configs.LENGTH - 1
+                end = len(data) - 1
+            else:
+                start = index
+                end = index + configs.LENGTH + 1
+
+            grays = []
+            for i in range(start, end):
+                path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
+                gray = load_gray_image(path)
+                grays.append(gray)
+
+            current = grays[0]
+            optical_flow = cv2.DualTVL1OpticalFlow_create()
+            for i in range(1, len(grays)):
+                flow = optical_flow.calc(current, grays[i], None)
+                current = grays[i]
+                imgs[i-1] = flow
+
+            speed = data[end][2]
+            images[c] = imgs
+            labels[c] = speed
+
+            print(start)
+            print(end)
 
             c += 1
 

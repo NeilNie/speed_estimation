@@ -42,8 +42,8 @@ from keras import backend as K
 
 class i3d:
 
-    def __init__(self, weights_path=None,
-                 input_shape=None, dropout_prob=0.0, endpoint_logit=True, classes=1):
+    def __init__(self, weights_path=None, input_shape=None,
+                 dropout_prob=0.0, endpoint_logit=True, classes=1):
 
         # type: (weights_path, input_shape, dropout_prob, endpoint_logit, classes) -> None
 
@@ -78,6 +78,7 @@ class i3d:
         :param classes: For regression (i.e. behavorial cloning) 1 is the default value.
                 optional number of classes to classify images into, only to be specified
                 if `include_top` is True, and if no `weights` argument is specified.
+
         '''
 
         self.input_shape = input_shape
@@ -100,7 +101,7 @@ class i3d:
     def summary(self):
         print(self.model.summary())
 
-    def train(self, train_gen, val_gen, epochs=10, epoch_steps=5000, val_steps=1000, log_path="logs/i3d_speed/", save_path=None):
+    def train(self, train_gen, epochs=10, epoch_steps=5000, val_gen=None, val_steps=None, validation=False, log_path="logs/i3d_speed/", save_path=None):
 
 
         '''training the model
@@ -112,15 +113,25 @@ class i3d:
         :param epoch_steps: number of training steps per epoch. (!= batch_size)
         :param val_steps: number of validation steps
         :param log_path: training log path.
+        :param validation: run validation or not. If not validating, val_gen and val_steps can be non.
         '''
 
         if save_path == None:
             print("[WARNING]: trained model will not be saved. Please specify save_path")
 
         tensorboard = TensorBoard(log_dir=(log_path + "/{}".format(datetime.datetime.now())))
-        self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
-                                  epochs=epochs,
-                                 verbose=1, callbacks=[tensorboard]) # validation_data=val_gen, validation_steps=val_steps,
+
+        if validation:
+            if val_gen and val_steps:
+                self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
+                                         epochs=epochs, validation_data=val_gen, validation_steps=val_steps,
+                                         verbose=1, callbacks=[tensorboard])  #
+            else:
+                raise Exception('please specify val_gen and val_steps')
+
+        else:
+            self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
+                                     epochs=epochs, verbose=1, callbacks=[tensorboard])
 
         self.model.save(save_path)
 

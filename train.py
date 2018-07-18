@@ -17,19 +17,25 @@ from i3d import i3d
 import configs
 import helper
 import pandas as pd
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    i3d_model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
-                    ) # weights_path='./i3d_32_11.h5'
+    i3d_model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS) , weights_path='./i3d_speed_c_64_2.h5')
     # i3d_model.summary()
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
-    val_label = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv')
+    val_label = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
-    train_gen = helper.comma_batch_generator(batch_size=1, data=labels, augment=False)
+    train_gen = helper.comma_batch_generator(batch_size=1, data=labels, augment=True)
     val_gen = helper.comma_validation_generator(batch_size=1, data=val_label)
 
-    i3d_model.train(train_gen=train_gen, epochs=10, epoch_steps=3000, val_gen=val_gen, val_steps=1000, save_path='./i3d_speed_32_1.h5')
+    # imgs, angles = next(train_gen)
+    # for b in imgs:
+    #     for im in b:
+    #         plt.imshow(im)
+    #         plt.show()
+
+    i3d_model.train(train_gen=train_gen, epochs=10, epoch_steps=3000, validation=True, val_gen=val_gen, val_steps=1000, save_path='./i3d_speed_c_64_3.h5')
 
 
