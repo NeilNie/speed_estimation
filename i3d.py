@@ -95,7 +95,7 @@ class i3d:
         self.model = self.create_model(img_input)
 
         if weights_path:
-            self.model.load_weights(weights_path)
+            self.model = load_model(weights_path)
             print("loaded weights:" + weights_path)
 
     def summary(self):
