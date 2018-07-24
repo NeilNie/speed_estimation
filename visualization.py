@@ -12,18 +12,19 @@ import pandas as pd
 from os import path
 import matplotlib
 import matplotlib.backends.backend_agg as agg
+import os
 import pylab
 from i3d import i3d
 import helper
 import configs
 
 pygame.init()
-size = (640*2, 480*4)
-pygame.display.set_caption("self driving data viewer")
+size = (640, 650)
+pygame.display.set_caption("speed prediction viewer")
 screen = pygame.display.set_mode(size, pygame.DOUBLEBUF)
 screen.set_alpha(None)
 
-camera_surface = pygame.surface.Surface((640, 480),0,24).convert()
+camera_surface = pygame.surface.Surface((640, 480), 0, 24).convert()
 clock = pygame.time.Clock()
 
 PI_RAD = (180 / np.pi)
@@ -112,11 +113,85 @@ def preprocess_img(img):
     return img
 
 
-def steering_viz_loop():
+def test_loop():
+
+    '''
+    for visualizing the model with the comma AI
+    test dataset. The ds doesn't contain training labels.
+    '''
+
+    # ------------------------------------------------
+    model = i3d(weights_path='i3d_speed_c_64_8.h5', input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
+
+    # read the steering labels and image path
+    files = os.listdir('/home/neil/dataset/speedchallenge/data/test')
+
+    # Create second screen with matplotlibs
+    fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
+    ax = fig.gca()
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
+    line1, = ax.plot([], [], 'b.-', label='Human')
+    A = []
+    ax.legend(loc='upper left', fontsize=8)
+
+    myFont = pygame.font.SysFont("monospace", 18)
+    randNumLabel = myFont.render('Human Driving Speed:', 1, blue)
+
+    input = []
+    starting_index = 5500
+
+    for i in range(starting_index, starting_index + 64):
+        img = helper.load_image("/home/neil/dataset/speedchallenge/data/test/" + "frame" + str(i) + ".jpg")
+        input.append(img)
+
+    # Run through all images
+    for i in range(starting_index + 65, len(files)-1):
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                break
+
+        img = helper.load_image("/home/neil/dataset/speedchallenge/data/test/" + "frame" + str(i) + ".jpg", resize=False)
+        in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+        input.pop(0)
+        input.append(in_frame)
+        input_array = np.array([input])
+        prediction = model.model.predict(input_array)[0][0]
+
+        #
+        # print speed status
+
+        A.append(prediction)
+        line1.set_ydata(A)
+        line1.set_xdata(range(len(A)))
+        ax.relim()
+        ax.autoscale_view()
+
+        canvas = agg.FigureCanvasAgg(fig)
+        canvas.draw()
+        renderer = canvas.get_renderer()
+        raw_data = renderer.tostring_rgb()
+        size = canvas.get_width_height()
+        surf = pygame.image.fromstring(raw_data, size, "RGB")
+        screen.blit(surf, (0, 480))
+
+        # draw on
+        pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
+        screen.blit(camera_surface, (0, 0))
+
+        diceDisplay = myFont.render(str(prediction), 1, blue)
+        screen.blit(randNumLabel, (50, 420))
+        screen.blit(diceDisplay, (50, 450))
+        clock.tick(60)
+        pygame.display.flip()
+
+
+def validation_loop():
 
     # loading models
     # -------------------------------------------------
-    model = i3d(weights_path='id3_32_5.h5', input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
+    model = i3d(weights_path='id3_64_8.h5', input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
 
     # -------------------------------------------------
     # steerings and images
@@ -197,95 +272,7 @@ def steering_viz_loop():
         pygame.display.flip()
 
 
-def cruise_control_viz_loop():
-
-    # load model (type 2)
-    model = None # ResearchModels(nb_classes=1, saved_model='/home/neil/Desktop/rm010_5.h5')
-
-    # read the steering labels and image path
-    df_truth = pd.read_csv('/home/neil/dataset/udacity/test.csv', usecols=['frame_id', 'speed'], index_col=None)
-
-    # Create second screen with matplotlibs
-    fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
-    ax = fig.gca()
-    ax.tick_params(axis='x', labelsize=8)
-    ax.tick_params(axis='y', labelsize=8)
-    # ax.legend(loc='upper left',fontsize=8)
-    line1, = ax.plot([], [], 'b.-', label='Human')
-    line2, = ax.plot([], [], 'r.-', label='Model')
-    A = []
-    B = []
-    ax.legend(loc='upper left', fontsize=8)
-
-    myFont = pygame.font.SysFont("monospace", 18)
-    randNumLabel = myFont.render('Human Steer Angle:', 1, blue)
-    randNumLabel2 = myFont.render('Model Steer Angle:', 1, red)
-    speed_ms = 5  # log['speed'][i]
-
-    input = []
-
-    for i in range(configs.LENGTH):
-        file = str(df_truth['frame_id'].loc[i])
-        img = helper.load_image(file)
-        input.append(img)
-
-    # Run through all images
-    for i in range(configs.LENGTH, len(df_truth)):
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                break
-
-        img = helper.load_image(str(df_truth['frame_id'].loc[i]))
-        input.pop()
-        input.insert(0, img)
-        input_array = np.array([np.asarray(input)])
-        prediction = model.model.predict(input_array)[0][0]
-        act_speed = df_truth['speed'].loc[i]
-
-        A.append(act_speed)
-        B.append(prediction)
-        line1.set_ydata(A)
-        line1.set_xdata(range(len(A)))
-        line2.set_ydata(B)
-        line2.set_xdata(range(len(B)))
-        ax.relim()
-        ax.autoscale_view()
-
-        canvas = agg.FigureCanvasAgg(fig)
-        canvas.draw()
-        renderer = canvas.get_renderer()
-        raw_data = renderer.tostring_rgb()
-        size = canvas.get_width_height()
-        surf = pygame.image.fromstring(raw_data, size, "RGB")
-        screen.blit(surf, (0, 480))
-
-        # draw on
-        pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
-        screen.blit(camera_surface, (0, 0))
-
-        if prediction < 10:
-            status = " very slow"
-        elif prediction >= 10 and prediction < 25:
-            status = " slow"
-        elif prediction >= 25 and prediction < 45:
-            status=  " medium"
-        elif prediction >= 45 and prediction < 60:
-            status = " fast"
-        else:
-            status = " nil"
-
-        diceDisplay = myFont.render(str(round(act_speed)), 1, blue)
-        diceDisplay2 = myFont.render(str(round(prediction)) + status, 1, red)
-        screen.blit(randNumLabel, (50, 420))
-        screen.blit(randNumLabel2, (400, 420))
-        screen.blit(diceDisplay, (50, 450))
-        screen.blit(diceDisplay2, (400, 450))
-        clock.tick(60)
-        pygame.display.flip()
-
-
 if __name__ == "__main__":
 
     # cruise_control_viz_loop()
-    steering_viz_loop()
+    test_loop()

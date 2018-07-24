@@ -20,7 +20,7 @@ import pandas as pd
 
 if __name__ == '__main__':
 
-    i3d_model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS) , weights_path='./i3d_speed_c_64_3.h5')
+    i3d_model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS) , weights_path='./i3d_speed_c_64_7.h5')
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
     val_label = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
@@ -34,6 +34,6 @@ if __name__ == '__main__':
     #         plt.imshow(im)
     #         plt.show()
 
-    i3d_model.train(train_gen=train_gen, epochs=12, epoch_steps=3000, validation=True, val_gen=val_gen, val_steps=1500, save_path='./i3d_speed_c_64_4.h5')
+    i3d_model.train(train_gen=train_gen, epochs=3, epoch_steps=3000, validation=True, val_gen=val_gen, val_steps=2000, save_path='./i3d_speed_c_64_8.h5')
 
 

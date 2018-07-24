@@ -171,11 +171,12 @@ metrics.top_2 = top_2
 # ----------------------------------------------------------------
 
 
-def load_image(image_file):
+def load_image(image_file, resize=True):
 
     img = cv2.imread(image_file)
-    img = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    if resize:
+        img = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
     return img
 
 
