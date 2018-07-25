@@ -38,7 +38,8 @@ from keras.models import load_model
 from keras.callbacks import TensorBoard
 import datetime
 from keras import backend as K
-
+import pandas as pd
+import helper
 
 class i3d:
 
@@ -101,11 +102,11 @@ class i3d:
     def summary(self):
         print(self.model.summary())
 
-    def train(self, train_gen, epochs=10, epoch_steps=5000, val_gen=None, val_steps=None, validation=False, log_path="logs", save_path=None):
-
+    def train(self, type, epochs=10, epoch_steps=5000, val_steps=None, validation=False, log_path="logs", save_path=None):
 
         '''training the model
 
+        :param type: tye type of model. Choices are: flow or rgb
         :param train_gen: training generator. For details, please read the
         implementation in helper.py
         :param val_gen: validation generator, for now it's required.
@@ -116,25 +117,36 @@ class i3d:
         :param validation: run validation or not. If not validating, val_gen and val_steps can be non.
         '''
 
-        if save_path == None:
+        labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
+        val_label = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
+
+        if type == 'flow':
+            train_gen = helper.comma_flow_batch_generator(batch_size=1, data=labels)
+            val_gen = helper.comma_flow_batch_generator(batch_size=1, data=val_label)
+        elif type == 'rgb':
+            train_gen = helper.comma_batch_generator(batch_size=1, data=labels, augment=True)
+            val_gen = helper.comma_validation_generator(batch_size=1, data=val_label)
+        else:
+            raise Exception('Sorry, the model type is not recognized')
+
+        if save_path is None:
             print("[WARNING]: trained model will not be saved. Please specify save_path")
 
         tensorboard = TensorBoard(log_dir=(log_path + "/{}".format(datetime.datetime.now())))
 
         if validation:
-            if val_gen and val_steps:
+            if val_steps:
                 self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
                                          epochs=epochs, validation_data=val_gen, validation_steps=val_steps,
                                          verbose=1, callbacks=[tensorboard])  #
             else:
-                raise Exception('please specify val_gen and val_steps')
+                raise Exception('please specify val_steps')
 
         else:
             self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
                                      epochs=epochs, verbose=1, callbacks=[tensorboard])
 
         self.model.save(save_path)
-
 
     def create_model(self, img_input):
 

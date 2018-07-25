@@ -122,52 +122,6 @@ def augument(images, angle):
     return images, angle
 
 
-def get_output_dim(model):
-    """
-    Infer output dimension from model by inspecting its layers.
-
-    :param model - tensorflow model
-    :returns - output dimension
-    """
-    for layer in reversed(model.layers):
-        if hasattr(layer, 'output_shape'):
-            return layer.output_shape[-1]
-
-    raise ValueError('Could not infer output dim')
-
-
-def std_evaluate(model, generator):
-    """
-    """
-    size = generator.get_size()
-    batch_size = generator.get_batch_size()
-    n_batches = size / batch_size
-
-    err_sum = 0.
-    err_count = 0.
-    for _ in range(n_batches):
-        X_batch, y_batch = generator.next()
-        y_pred = model.predict_on_batch(X_batch)
-        err_sum += np.sum((y_batch - y_pred) ** 2)
-        err_count += len(y_pred)
-
-    mse = err_sum / err_count
-    return [mse, np.sqrt(mse)]
-
-
-def rmse(y_true, y_pred):
-    """
-    Calculates RMSE
-    """
-    return K.sqrt(K.mean(K.square(y_pred - y_true)))
-
-
-def top_2(y_true, y_pred):
-    return K.mean(tf.nn.in_top_k(y_pred, K.argmax(y_true, axis=-1), 2))
-
-metrics.rmse = rmse
-metrics.top_2 = top_2
-
 # ----------------------------------------------------------------
 
 
@@ -193,15 +147,11 @@ def comma_validation_generator(data, batch_size):
     """
     Generate training images given image paths and associated steering angles
 
-    Args:
-         data (numpy.array)        : the loaded data (converted to list from pandas format)
-         batch_size (int)   : batch size for training
-         training: (boolean): whether to use augmentation or not.
+    :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+    :param batch_size   :  (int) batch size for training
 
-    Yields:
-         images ([tensor])  : images for training
-         angles ([float])   : the corresponding steering angles
-
+    :rtype: Iterator[images, angles] images for training
+    the corresponding steering angles
 
     """
 
@@ -247,15 +197,12 @@ def comma_batch_generator(data, batch_size, augment):
     """
     Generate training images given image paths and associated steering angles
 
-    Args:
-         data (numpy.array)        : the loaded data (converted to list from pandas format)
-         batch_size (int)   : batch size for training
-         training: (boolean): whether to use augmentation or not.
+    :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+    :param batch_size   :  (int) batch size for training
+    :param training     : (boolean): whether to use augmentation or not.
 
-    Yields:
-         images ([tensor])  : images for training
-         angles ([float])   : the corresponding steering angles
-
+    :rtype: Iterator[images, angles] images for training
+    the corresponding steering angles
 
     """
 
@@ -304,6 +251,17 @@ def comma_batch_generator(data, batch_size, augment):
 
 def comma_flow_batch_generator(data, batch_size):
 
+    """
+    Generate training images given image paths and associated steering angles
+
+    :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+    :param batch_size   :  (int) batch size for training
+
+    :rtype: Iterator[images, angles] images for training
+    the corresponding steering angles
+
+    """
+
     images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2], dtype=np.int32)
     labels = np.empty([batch_size])
 
@@ -327,7 +285,7 @@ def comma_flow_batch_generator(data, batch_size):
 
             grays = []
             for i in range(start, end):
-                path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
+                path = "/home/ubuntu/datasets/speedchallenge/data/train/" + str(data[i][1])
                 gray = load_gray_image(path)
                 grays.append(gray)
 
@@ -342,9 +300,6 @@ def comma_flow_batch_generator(data, batch_size):
             images[c] = imgs
             labels[c] = speed
 
-            print(start)
-            print(end)
-
             c += 1
 
             if c == batch_size:
@@ -353,7 +308,7 @@ def comma_flow_batch_generator(data, batch_size):
         yield images, labels
 
 
-def udacity_batch_generator(data, batch_size, augment):
+def udacity_train_gen(data, batch_size, augment):
 
     """
     Generate training images given image paths and associated steering angles
@@ -413,7 +368,7 @@ def udacity_batch_generator(data, batch_size, augment):
         yield images, labels
 
 
-def validation_batch_generator(data, batch_size):
+def udacity_val_gen(data, batch_size):
 
     """
     Generate training image give image paths and associated steering angles
