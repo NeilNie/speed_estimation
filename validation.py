@@ -59,13 +59,13 @@ def validation_score(model_path):
     # pd.DataFrame({"steering_angle": predictions}).to_csv('./result.csv', index=False, header=True)
     # print("Done!")
 
-    return math.sqrt(esum / len(predictions))
+    return (esum / len(predictions))
 
 
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('./i3d_speed_c_64_7.h5')
+    score = validation_score('./i3d_speed_c_64_11.h5')
     print("Finished!")
     print(score)
 

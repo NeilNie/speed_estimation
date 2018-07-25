@@ -114,10 +114,10 @@ def augument(images, angle):
         for idx in range(len(images)):
             image = images[idx].astype(np.uint8)
             images[idx] = random_brightness(image)
-    if a[3] == 1:
-        for idx in range(len(images)):
-            image = images[idx].astype(np.uint8)
-            images[idx] = flip_image(image)
+    # if a[3] == 1:
+    #     for idx in range(len(images)):
+    #         image = images[idx].astype(np.uint8)
+    #         images[idx] = flip_image(image)
 
     return images, angle
 

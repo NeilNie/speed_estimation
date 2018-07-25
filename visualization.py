@@ -121,7 +121,7 @@ def test_loop():
     '''
 
     # ------------------------------------------------
-    model = i3d(weights_path='i3d_speed_c_64_8.h5', input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
+    model = i3d(weights_path='i3d_speed_c_64_10.h5', input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
 
     # read the steering labels and image path
     files = os.listdir('/home/neil/dataset/speedchallenge/data/test')
@@ -139,7 +139,7 @@ def test_loop():
     randNumLabel = myFont.render('Human Driving Speed:', 1, blue)
 
     input = []
-    starting_index = 5500
+    starting_index = 8000
 
     for i in range(starting_index, starting_index + 64):
         img = helper.load_image("/home/neil/dataset/speedchallenge/data/test/" + "frame" + str(i) + ".jpg")
