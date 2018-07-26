@@ -31,8 +31,9 @@ from keras.layers import MaxPooling3D
 from keras.layers import AveragePooling3D
 from keras.layers import Dropout
 from keras.layers import Reshape
-from keras.optimizers import Adam
+from keras.optimizers import SGD
 from keras.layers import Flatten
+from keras.losses import mean_squared_error
 
 from keras.models import load_model
 from keras.callbacks import TensorBoard
@@ -45,8 +46,6 @@ class i3d:
 
     def __init__(self, weights_path=None, input_shape=None,
                  dropout_prob=0.0, endpoint_logit=True, classes=1):
-
-        # type: (weights_path, input_shape, dropout_prob, endpoint_logit, classes) -> None
 
         '''Instantiates the Inflated 3D Inception v1 architecture.
 
@@ -90,7 +89,7 @@ class i3d:
 
         input_shape = self._obtain_input_shape(self.input_shape, default_frame_size=224,
                                                min_frame_size=32, default_num_frames=64,
-                                               min_num_frames=8, data_format=K.image_data_format())  # weights=weights
+                                               min_num_frames=1, data_format=K.image_data_format())  # weights=weights
 
         img_input = Input(shape=input_shape)
         self.model = self.create_model(img_input)
@@ -121,8 +120,8 @@ class i3d:
         val_label = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
         if type == 'flow':
-            train_gen = helper.comma_flow_batch_generator(batch_size=1, data=labels)
-            val_gen = helper.comma_flow_batch_generator(batch_size=1, data=val_label)
+            train_gen = helper.comma_flow_batch_gen(batch_size=1, data=labels)
+            val_gen = helper.comma_flow_batch_gen(batch_size=1, data=val_label)
         elif type == 'rgb':
             train_gen = helper.comma_batch_generator(batch_size=1, data=labels, augment=True)
             val_gen = helper.comma_validation_generator(batch_size=1, data=val_label)
@@ -147,6 +146,121 @@ class i3d:
                                      epochs=epochs, verbose=1, callbacks=[tensorboard])
 
         self.model.save(save_path)
+
+    def create_small_model(self, img_input):
+
+        '''create and return the i3d model
+                :param: img_input: input shape of the network.
+                :return: A Keras model instance.
+                '''
+
+        # Determine proper input shape
+
+        channel_axis = 4
+
+        # Downsampling via convolution (spatial and temporal)
+        x = self.conv3d_bath_norm(img_input, 64, 7, 7, 7, strides=(2, 2, 2), padding='same', name='Conv3d_1a_7x7')
+
+        # Downsampling (spatial only)
+        x = MaxPooling3D((1, 3, 3), strides=(1, 2, 2), padding='same', name='MaxPool2d_2a_3x3')(x)
+        x = self.conv3d_bath_norm(x, 64, 1, 1, 1, strides=(1, 1, 1), padding='same', name='Conv3d_2b_1x1')
+        x = self.conv3d_bath_norm(x, 192, 3, 3, 3, strides=(1, 1, 1), padding='same', name='Conv3d_2c_3x3')
+
+        # Downsampling (spatial only)
+        x = MaxPooling3D((1, 3, 3), strides=(1, 2, 2), padding='same', name='MaxPool2d_3a_3x3')(x)
+
+        # Mixed 3b
+        branch_0 = self.conv3d_bath_norm(x, 64, 1, 1, 1, padding='same', name='Conv3d_3b_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 96, 1, 1, 1, padding='same', name='Conv3d_3b_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 128, 3, 3, 3, padding='same', name='Conv3d_3b_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 16, 1, 1, 1, padding='same', name='Conv3d_3b_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 32, 3, 3, 3, padding='same', name='Conv3d_3b_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_3b_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 32, 1, 1, 1, padding='same', name='Conv3d_3b_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_3b')
+
+        # Mixed 3c
+        branch_0 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_3c_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_3c_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 192, 3, 3, 3, padding='same', name='Conv3d_3c_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 32, 1, 1, 1, padding='same', name='Conv3d_3c_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 96, 3, 3, 3, padding='same', name='Conv3d_3c_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_3c_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_3c_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_3c')
+
+        # Downsampling (spatial and temporal)
+        x = MaxPooling3D((3, 3, 3), strides=(2, 2, 2), padding='same', name='MaxPool2d_4a_3x3')(x)
+
+        # Mixed 4b
+        branch_0 = self.conv3d_bath_norm(x, 192, 1, 1, 1, padding='same', name='Conv3d_4b_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 96, 1, 1, 1, padding='same', name='Conv3d_4b_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 208, 3, 3, 3, padding='same', name='Conv3d_4b_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 16, 1, 1, 1, padding='same', name='Conv3d_4b_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 48, 3, 3, 3, padding='same', name='Conv3d_4b_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4b_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4b_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4b')
+
+        # Mixed 4c
+        branch_0 = self.conv3d_bath_norm(x, 160, 1, 1, 1, padding='same', name='Conv3d_4c_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 112, 1, 1, 1, padding='same', name='Conv3d_4c_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 224, 3, 3, 3, padding='same', name='Conv3d_4c_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 24, 1, 1, 1, padding='same', name='Conv3d_4c_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4c_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4c_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4c_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4c')
+
+        # Mixed 4d
+        branch_0 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_4d_0a_1x1')
+
+        branch_1 = self.conv3d_bath_norm(x, 128, 1, 1, 1, padding='same', name='Conv3d_4d_1a_1x1')
+        branch_1 = self.conv3d_bath_norm(branch_1, 256, 3, 3, 3, padding='same', name='Conv3d_4d_1b_3x3')
+
+        branch_2 = self.conv3d_bath_norm(x, 24, 1, 1, 1, padding='same', name='Conv3d_4d_2a_1x1')
+        branch_2 = self.conv3d_bath_norm(branch_2, 64, 3, 3, 3, padding='same', name='Conv3d_4d_2b_3x3')
+
+        branch_3 = MaxPooling3D((3, 3, 3), strides=(1, 1, 1), padding='same', name='MaxPool2d_4d_3a_3x3')(x)
+        branch_3 = self.conv3d_bath_norm(branch_3, 64, 1, 1, 1, padding='same', name='Conv3d_4d_3b_1x1')
+
+        x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4d')
+
+        x = AveragePooling3D((2, 7, 7), strides=(1, 1, 1), padding='valid', name='global_avg_pool')(x)
+        x = Dropout(self.dropout_prob)(x)
+
+        x = Flatten()(x)
+        x = Dense(64, activation='relu')(x)
+        x = Dropout(self.dropout_prob)(x)
+        x = Dense(32, activation='relu')(x)
+        x = Dropout(self.dropout_prob)(x)
+        x = Dense(self.classes)(x)
+
+        inputs = img_input
+
+        # create model
+        model = Model(inputs, x, name='i3d_inception')
+        sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
+        #
+        model.compile(loss=mean_squared_error, optimizer=sgd)
+
+        return model
 
     def create_model(self, img_input):
 
@@ -324,9 +438,9 @@ class i3d:
 
         # create model
         model = Model(inputs, x, name='i3d_inception')
-        optimizer = Adam(lr=1e-5, decay=1e-6)
-        # self.root_mean_squared_error
-        model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
+        sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
+        #
+        model.compile(loss=self.root_mean_squared_error, optimizer=sgd)
 
         return model
 

@@ -155,7 +155,7 @@ def comma_validation_generator(data, batch_size):
 
     """
 
-    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
     labels = np.empty([batch_size])
 
     while True:
@@ -164,7 +164,7 @@ def comma_validation_generator(data, batch_size):
 
         for index in np.random.permutation(data.shape[0]):
 
-            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
 
             if index < configs.LENGTH:
                 start = 0
@@ -206,7 +206,7 @@ def comma_batch_generator(data, batch_size, augment):
 
     """
 
-    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
     labels = np.empty([batch_size])
 
     while True:
@@ -215,7 +215,7 @@ def comma_batch_generator(data, batch_size, augment):
 
         for index in np.random.permutation(data.shape[0]):
 
-            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
 
             if index < configs.LENGTH:
                 start = 0
@@ -249,7 +249,7 @@ def comma_batch_generator(data, batch_size, augment):
         yield images, labels
 
 
-def comma_flow_batch_generator(data, batch_size):
+def comma_flow_batch_gen(data, batch_size):
 
     """
     Generate training images given image paths and associated steering angles
@@ -285,19 +285,81 @@ def comma_flow_batch_generator(data, batch_size):
 
             grays = []
             for i in range(start, end):
-                path = "/home/ubuntu/datasets/speedchallenge/data/train/" + str(data[i][1])
+                path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
                 gray = load_gray_image(path)
                 grays.append(gray)
 
             current = grays[0]
-            optical_flow = cv2.DualTVL1OpticalFlow_create()
             for i in range(1, len(grays)):
-                flow = optical_flow.calc(current, grays[i], None)
+                flow = cv2.calcOpticalFlowFarneback(current, grays[i], None, 0.5, 3, 15, 3, 5, 1.5, 0)
                 current = grays[i]
                 imgs[i-1] = flow
 
             speed = data[end][2]
             images[c] = imgs
+            labels[c] = speed
+
+            c += 1
+
+            if c == batch_size:
+                break
+
+        yield images, labels
+
+
+def comma_flow_single_rgb_batch_gen(data, batch_size):
+
+    """
+    Generate training images given image paths and associated steering angles
+
+    :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+    :param batch_size   :  (int) batch size for training
+
+    :rtype: Iterator[images, angles] images for training
+    the corresponding steering angles
+
+    """
+
+    images = np.empty([batch_size, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+    labels = np.empty([batch_size])
+
+    while True:
+
+        c = 0
+
+        for index in np.random.permutation(data.shape[0]):
+
+            if index >= len(data) - 1:
+                previous = len(data) - 2
+                current = len(data) - 1
+            else:
+                previous = index
+                current = index + 1
+
+            frame1 = cv2.imread("/home/neil/dataset/speedchallenge/data/train/" + str(data[previous][1]))
+            previousGray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+
+            # Get the next frame
+            frame2 = cv2.imread("/home/neil/dataset/speedchallenge/data/train/" + str(data[current][1]))
+            gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+
+            # Create the HSV color image
+            hsvImg = np.zeros_like(frame1)
+            hsvImg[..., 1] = 255
+
+            # Calculate the dense optical flow
+            flow = cv2.calcOpticalFlowFarneback(previousGray, gray, None, 0.5, 3, 15, 3, 5, 1.5, 0)
+
+            # Obtain the flow magnitude and direction angle
+            mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+
+            # Update the color image
+            hsvImg[..., 0] = 0.5 * ang * 180 / np.pi
+            hsvImg[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+            rgbImg = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
+
+            speed = data[current][2]
+            images[c] = rgbImg
             labels[c] = speed
 
             c += 1
