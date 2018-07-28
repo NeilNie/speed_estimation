@@ -33,14 +33,13 @@ from keras.layers import Dropout
 from keras.layers import Reshape
 from keras.optimizers import SGD
 from keras.layers import Flatten
-from keras.losses import mean_squared_error
-
 from keras.models import load_model
 from keras.callbacks import TensorBoard
 import datetime
 from keras import backend as K
 import pandas as pd
 import helper
+import matplotlib.pyplot as plt
 
 class i3d:
 
@@ -101,7 +100,7 @@ class i3d:
     def summary(self):
         print(self.model.summary())
 
-    def train(self, type, epochs=10, epoch_steps=5000, val_steps=None, validation=False, log_path="logs", save_path=None):
+    def train(self, labels, val_labels, type, epochs=10, epoch_steps=5000, val_steps=None, validation=False, log_path="logs", save_path=None):
 
         '''training the model
 
@@ -116,17 +115,23 @@ class i3d:
         :param validation: run validation or not. If not validating, val_gen and val_steps can be non.
         '''
 
-        labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
-        val_label = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
-
         if type == 'flow':
             train_gen = helper.comma_flow_batch_gen(batch_size=1, data=labels)
-            val_gen = helper.comma_flow_batch_gen(batch_size=1, data=val_label)
+            val_gen = helper.comma_flow_batch_gen(batch_size=1, data=val_labels)
         elif type == 'rgb':
             train_gen = helper.comma_batch_generator(batch_size=1, data=labels, augment=True)
-            val_gen = helper.comma_validation_generator(batch_size=1, data=val_label)
+            val_gen = helper.comma_validation_generator(batch_size=1, data=val_labels)
+        elif type == 'rgb-flow':
+            train_gen = helper.comma_flow_multi_batch_gen(batch_size=1, data=labels)
+            val_gen = helper.comma_flow_multi_batch_gen(batch_size=1, data=val_labels)
         else:
             raise Exception('Sorry, the model type is not recognized')
+
+        # imgs, angles = next(train_gen)
+        # for b in imgs:
+        #     for im in b:
+        #         plt.imshow(im)
+        #         plt.show()
 
         if save_path is None:
             print("[WARNING]: trained model will not be saved. Please specify save_path")
@@ -136,8 +141,9 @@ class i3d:
         if validation:
             if val_steps:
                 self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
-                                         epochs=epochs, validation_data=val_gen, validation_steps=val_steps,
-                                         verbose=1, callbacks=[tensorboard])  #
+                                         epochs=epochs, validation_data=val_gen,
+                                         validation_steps=val_steps,
+                                         verbose=1, callbacks=[tensorboard])
             else:
                 raise Exception('please specify val_steps')
 
@@ -147,12 +153,13 @@ class i3d:
 
         self.model.save(save_path)
 
-    def create_small_model(self, img_input):
+    def create_small_model(self, img_input, optimizer=SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)):
 
         '''create and return the i3d model
-                :param: img_input: input shape of the network.
-                :return: A Keras model instance.
-                '''
+        :param: img_input: input shape of the network.
+        :return: A Keras model instance.
+
+        '''
 
         # Determine proper input shape
 
@@ -256,13 +263,11 @@ class i3d:
 
         # create model
         model = Model(inputs, x, name='i3d_inception')
-        sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
-        #
-        model.compile(loss=mean_squared_error, optimizer=sgd)
+        model.compile(loss='mean_squared_error', optimizer=optimizer)
 
         return model
 
-    def create_model(self, img_input):
+    def create_model(self, img_input, optimizer=SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)):
 
         '''create and return the i3d model
         :param: img_input: input shape of the network.
@@ -427,26 +432,13 @@ class i3d:
         x = Flatten()(x)
         x = Dense(self.classes)(x)
 
-        # logits (raw scores for each class)
-        # x = Lambda(lambda x: K.mean(x, axis=1, keepdims=False), output_shape=lambda s: (s[0], s[2]))(x)
-
-        # if not self.endpoint_logit:
-        #     x = Activation('softmax', name='prediction')(x)
-        # ===
-
         inputs = img_input
 
         # create model
         model = Model(inputs, x, name='i3d_inception')
-        sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
-        #
-        model.compile(loss=self.root_mean_squared_error, optimizer=sgd)
+        model.compile(loss='mean_squared_error', optimizer=optimizer)
 
         return model
-
-    @staticmethod
-    def root_mean_squared_error(y_true, y_pred):
-        return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
 
     @staticmethod
     def conv3d_bath_norm(x, filters, num_frames, num_row, num_col, padding='same', strides=(1, 1, 1),

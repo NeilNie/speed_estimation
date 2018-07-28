@@ -13,9 +13,10 @@ import numpy as np
 import helper
 import math
 import time
+import matplotlib.pyplot as plt
 
 
-def validation_score(model_path):
+def validation_score(model_path, type, save=False, debugging=False):
 
     model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
                     weights_path=model_path)
@@ -28,36 +29,94 @@ def validation_score(model_path):
     input = []
     predictions = []
 
-    start_time = time.time()
+    if type == 'flow':
 
-    for i in range(configs.LENGTH):
-        file = "/home/neil/dataset/speedchallenge/data/train/" + str(df_truth[i][1])
-        img = helper.load_image(file)
-        input.append(img)
+        raise Exception('Sorry, the model type is not supported')
 
-    # Run through all images
-    for i in range(configs.LENGTH, len(df_truth)):
+    elif type == 'rgb':
 
-        p = "/home/neil/dataset/speedchallenge/data/train/" + str(df_truth[i][1])
-        img = helper.load_image(p)
-        input.pop(0)
-        input.append(img)
-        input_array = np.array([np.asarray(input)])
-        prediction = model.model.predict(input_array)[0][0]
-        actual_steers = df_truth[i][2]
-        e = (actual_steers - prediction) ** 2
-        esum += e
-        count += 1
+        start_time = time.time()
 
-        predictions.append(prediction)
+        for i in range(configs.LENGTH):
+            file = configs.TRAIN_DIR + str(df_truth[i][1])
+            img = helper.load_image(file)
+            input.append(img)
 
-        if count % 1000 == 0:
-            print('.')
+        # Run through all images
+        for i in range(configs.LENGTH, len(df_truth)):
+
+            p = configs.TRAIN_DIR + str(df_truth[i][1])
+            img = helper.load_image(p)
+            input.pop(0)
+            input.append(img)
+            input_array = np.array([np.asarray(input)])
+            prediction = model.model.predict(input_array)[0][0]
+            actual_steers = df_truth[i][2]
+            e = (actual_steers - prediction) ** 2
+            esum += e
+            count += 1
+
+            predictions.append(prediction)
+
+            if count % 1000 == 0:
+                print('.')
+
+    elif type == 'rgb-flow':
+
+        print('Started')
+
+        start_time = time.time()
+
+        previous = helper.load_image(configs.TRAIN_DIR + str(df_truth[0][1]))
+
+        for i in range(1, configs.LENGTH + 1):
+
+            img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
+            rgbImg = helper.optical_flow_rgb(previous=previous, current=img)
+            if debugging:
+                # fig = plt.figure(figsize=(3, 1))
+                # fig.add_subplot(1, 1, 1)
+                plt.imshow(rgbImg)
+                # fig.add_subplot(1, 2, 1)
+                plt.imshow(previous)
+                # fig.add_subplot(1, 3, 1)
+                plt.imshow(img)
+                plt.show()
+
+            previous = img
+            input.append(rgbImg)
+
+        previous = helper.load_image(configs.TRAIN_DIR + str(df_truth[configs.LENGTH + 1][1]))
+
+        for i in range(configs.LENGTH + 2, len(df_truth)):
+
+            img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
+            rgb_flow = helper.optical_flow_rgb(previous, img)
+            if debugging:
+                plt.imshow(rgb_flow)
+                plt.show()
+            input.pop(0)
+            input.append(rgb_flow)
+            input_array = np.array([np.asarray(input)])
+            prediction = model.model.predict(input_array)[0][0]
+            actual_steers = df_truth[i][2]
+            e = (actual_steers - prediction) ** 2
+            esum += e
+            count += 1
+
+            predictions.append(prediction)
+
+            if count % 1000 == 0:
+                print('.')
+    else:
+        raise Exception('Sorry, the model type is not recognized')
 
     print("time per step: %s seconds" % ((time.time() - start_time) / len(predictions)))
-    # print("Writing predictions...")
-    # pd.DataFrame({"steering_angle": predictions}).to_csv('./result.csv', index=False, header=True)
-    # print("Done!")
+
+    if save:
+        print("Writing predictions...")
+        pd.DataFrame({"steering_angle": predictions}).to_csv('./result.csv', index=False, header=True)
+        print("Done!")
 
     return (esum / len(predictions))
 
@@ -65,9 +124,7 @@ def validation_score(model_path):
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('./i3d_speed_c_64_11.h5')
+    score = validation_score('./i3d_speed_comma_multiflow_32_0.h5', type='rgb-flow', debugging=False)
     print("Finished!")
     print(score)
 
-    # score2 = validation_score('./i3d_speed_c_64_8.h5')
-    # print(score2)

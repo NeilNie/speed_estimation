@@ -124,7 +124,6 @@ def augument(images, angle):
 
 # ----------------------------------------------------------------
 
-
 def load_image(image_file, resize=True):
 
     img = cv2.imread(image_file)
@@ -140,6 +139,35 @@ def load_gray_image(image_file):
     img = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return img
+
+
+def optical_flow_rgb(previous, current):
+
+    ''' perform optical flow on two consequtive frames
+    and then return the RGB results.
+
+    :param previous: the previous frame (rgb)
+    :param current: the current frame (rgb)
+    :return: rgb image after optical flow
+    '''
+
+    previous_gray = cv2.cvtColor(previous, cv2.COLOR_RGB2GRAY)
+    gray = cv2.cvtColor(current, cv2.COLOR_RGB2GRAY)
+
+    flow = cv2.calcOpticalFlowFarneback(previous_gray, gray, None, 0.5, 3, 15, 3, 5, 1.5, 0)
+
+    hsvImg = np.zeros_like(previous)
+    hsvImg[..., 1] = 255
+    # Obtain the flow magnitude and direction angle
+    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+
+    # Update the color image
+    hsvImg[..., 0] = 0.5 * ang * 180 / np.pi
+    hsvImg[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    rgbImg = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
+    rgbImg = cv2.resize(rgbImg, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+
+    return rgbImg
 
 
 def comma_validation_generator(data, batch_size):
@@ -307,6 +335,66 @@ def comma_flow_batch_gen(data, batch_size):
         yield images, labels
 
 
+def comma_flow_multi_batch_gen(data, batch_size):
+
+    """
+    Generate batches of training inputs with the corresponding driving speed.
+    1. perform optical flow on two consecutive images.
+    2. convert the optical flow result from HSV to RGB
+    3. stack n frames of these rgb frames into a training input.
+
+    :param data        : (numpy.array) the loaded data (converted to list from pandas format)
+    :param batch_size  : (int) batch size for training
+
+    :rtype: Iterator[images, angles] images for training
+    the corresponding steering angles
+
+    """
+
+    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+    labels = np.empty([batch_size])
+
+    while True:
+
+        c = 0
+
+        for index in np.random.permutation(data.shape[0]):
+
+            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3], dtype=np.int32)
+
+            if index < configs.LENGTH + 1:
+                start = 0
+                end = configs.LENGTH + 1
+            elif index + configs.LENGTH + 1 >= len(data):
+                start = len(data) - configs.LENGTH - 1
+                end = len(data) - 1
+            else:
+                start = index
+                end = index + configs.LENGTH + 1
+
+            raws = []
+            for i in range(start, end):
+                path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
+                raw = load_image(path)
+                raws.append(raw)
+
+            current = raws[0]
+            for i in range(1, len(raws)):
+                rgb_img = optical_flow_rgb(previous=current, current=raws[i])
+                imgs[i-1] = rgb_img
+
+            speed = data[end][2]
+            images[c] = imgs
+            labels[c] = speed
+
+            c += 1
+
+            if c == batch_size:
+                break
+
+        yield images, labels
+
+
 def comma_flow_single_rgb_batch_gen(data, batch_size):
 
     """
@@ -357,6 +445,7 @@ def comma_flow_single_rgb_batch_gen(data, batch_size):
             hsvImg[..., 0] = 0.5 * ang * 180 / np.pi
             hsvImg[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
             rgbImg = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
+            rgbImg = cv2.resize(rgbImg, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
 
             speed = data[current][2]
             images[c] = rgbImg
