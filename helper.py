@@ -154,7 +154,7 @@ def optical_flow_rgb(previous, current):
     previous_gray = cv2.cvtColor(previous, cv2.COLOR_RGB2GRAY)
     gray = cv2.cvtColor(current, cv2.COLOR_RGB2GRAY)
 
-    flow = cv2.calcOpticalFlowFarneback(previous_gray, gray, None, 0.5, 3, 15, 3, 5, 1.5, 0)
+    flow = cv2.calcOpticalFlowFarneback(previous_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
     hsvImg = np.zeros_like(previous)
     hsvImg[..., 1] = 255

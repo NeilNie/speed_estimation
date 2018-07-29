@@ -41,10 +41,10 @@ import pandas as pd
 import helper
 import matplotlib.pyplot as plt
 
+
 class i3d:
 
-    def __init__(self, weights_path=None, input_shape=None,
-                 dropout_prob=0.0, endpoint_logit=True, classes=1):
+    def __init__(self, weights_path=None, input_shape=None, dropout_prob=0.0, classes=1):
 
         '''Instantiates the Inflated 3D Inception v1 architecture.
 
@@ -66,14 +66,6 @@ class i3d:
                 0.0 means no dropout is applied, 1.0 means dropout is applied to all features.
                 Note: Since Dropout is applied just before the classification
                 layer, it is only useful when `include_top` is set to True.
-        :param endpoint_logit: (boolean) optional. If True, the model's forward pass
-                will end at producing logits. Otherwise, softmax is applied after producing
-                the logits to produce the class probabilities prediction. Setting this parameter
-                to True is particularly useful when you want to combine results of rgb model
-                and optical flow model.
-                - `True` end model forward pass at logit output
-                - `False` go further after logit to produce softmax predictions
-                Note: This parameter is only useful when `include_top` is set to True.
         :param classes: For regression (i.e. behavorial cloning) 1 is the default value.
                 optional number of classes to classify images into, only to be specified
                 if `include_top` is True, and if no `weights` argument is specified.
@@ -82,7 +74,6 @@ class i3d:
 
         self.input_shape = input_shape
         self.dropout_prob = dropout_prob
-        self.endpoint_logit = endpoint_logit
         self.classes = classes
         self.weight_path = weights_path
 
@@ -94,21 +85,23 @@ class i3d:
         self.model = self.create_model(img_input)
 
         if weights_path:
-            self.model = load_model(weights_path)
+            self.model.load_weights(weights_path)
             print("loaded weights:" + weights_path)
 
     def summary(self):
         print(self.model.summary())
 
-    def train(self, labels, val_labels, type, epochs=10, epoch_steps=5000, val_steps=None, validation=False, log_path="logs", save_path=None):
+    def train(self, labels, val_labels, type, epochs=10, epoch_steps=5000, val_steps=None, validation=False, log_path="logs/flow", save_path=None):
 
         '''training the model
 
         :param type: tye type of model. Choices are: flow or rgb
-        :param train_gen: training generator. For details, please read the
-        implementation in helper.py
-        :param val_gen: validation generator, for now it's required.
-        :param epoch: number of training epochs.
+        :param labels: numpy array of training labels
+        :param val_labels: numpy array of validation labels, for now it's required.
+        :param type: three types of models: flow (optical flow multi-frame input, only two channels)
+        rgb, (multi-frame rgb image input) and rgb-flow (after optical flow, convert to rgb,
+        multi-frame input.)
+        :param epochs: number of training epochs.
         :param epoch_steps: number of training steps per epoch. (!= batch_size)
         :param val_steps: number of validation steps
         :param log_path: training log path.
@@ -148,17 +141,16 @@ class i3d:
                 raise Exception('please specify val_steps')
 
         else:
-            self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps,
-                                     epochs=epochs, verbose=1, callbacks=[tensorboard])
+            self.model.fit_generator(train_gen, steps_per_epoch=epoch_steps, epochs=epochs, verbose=1, callbacks=[tensorboard])
 
         self.model.save(save_path)
 
     def create_small_model(self, img_input, optimizer=SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)):
 
         '''create and return the i3d model
+
         :param: img_input: input shape of the network.
         :return: A Keras model instance.
-
         '''
 
         # Determine proper input shape
@@ -528,7 +520,7 @@ class i3d:
         else:
             default_shape = (default_num_frames, default_frame_size, default_frame_size, 3)
 
-        if (weights == 'kinetics_only' or weights == 'imagenet_and_kinetics'):
+        if weights == 'kinetics_only' or weights == 'imagenet_and_kinetics':
             if input_shape is not None:
                 if input_shape != default_shape:
                     raise ValueError('When setting`include_top=True` '
@@ -555,7 +547,7 @@ class i3d:
                         (input_shape[2] is not None and input_shape[2] < min_frame_size)):
                     raise ValueError('Input size must be at least ' +
                                      str(min_frame_size) + 'x' + str(min_frame_size) + '; got '
-                                                                                       '`input_shape=' + str(input_shape) + '`')
+                                     '`input_shape=' + str(input_shape) + '`')
 
         else:
             input_shape = default_shape

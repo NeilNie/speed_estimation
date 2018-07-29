@@ -25,7 +25,6 @@ def validation_score(model_path, type, save=False, debugging=False):
     df_truth = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
     esum = 0
-    count = 0
     input = []
     predictions = []
 
@@ -54,11 +53,10 @@ def validation_score(model_path, type, save=False, debugging=False):
             actual_steers = df_truth[i][2]
             e = (actual_steers - prediction) ** 2
             esum += e
-            count += 1
 
             predictions.append(prediction)
 
-            if count % 1000 == 0:
+            if len(predictions) % 1000 == 0:
                 print('.')
 
     elif type == 'rgb-flow':
@@ -102,11 +100,10 @@ def validation_score(model_path, type, save=False, debugging=False):
             actual_steers = df_truth[i][2]
             e = (actual_steers - prediction) ** 2
             esum += e
-            count += 1
 
             predictions.append(prediction)
 
-            if count % 1000 == 0:
+            if len(predictions) % 1000 == 0:
                 print('.')
     else:
         raise Exception('Sorry, the model type is not recognized')
@@ -118,13 +115,13 @@ def validation_score(model_path, type, save=False, debugging=False):
         pd.DataFrame({"steering_angle": predictions}).to_csv('./result.csv', index=False, header=True)
         print("Done!")
 
-    return (esum / len(predictions))
+    return esum / len(predictions)
 
 
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('./i3d_speed_comma_multiflow_32_0.h5', type='rgb-flow', debugging=False)
+    score = validation_score('./i3d_speed_comma_multiflow_32_4.h5', type='rgb-flow', debugging=False)
     print("Finished!")
     print(score)
 
