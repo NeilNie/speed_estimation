@@ -242,13 +242,15 @@ class i3d:
         x = layers.concatenate([branch_0, branch_1, branch_2, branch_3], axis=channel_axis, name='Mixed_4d')
 
         x = AveragePooling3D((2, 7, 7), strides=(1, 1, 1), padding='valid', name='global_avg_pool')(x)
-        x = Dropout(self.dropout_prob)(x)
+        x = Dropout(0.5)(x)
 
         x = Flatten()(x)
+        x = Dense(128, activation='relu')(x)
+        x = Dropout(0.5)(x)
         x = Dense(64, activation='relu')(x)
-        x = Dropout(self.dropout_prob)(x)
+        x = Dropout(0.5)(x)
         x = Dense(32, activation='relu')(x)
-        x = Dropout(self.dropout_prob)(x)
+        x = Dropout(0.5)(x)
         x = Dense(self.classes)(x)
 
         inputs = img_input

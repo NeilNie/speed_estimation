@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 
 def validation_score(model_path, type, save=False, debugging=False):
 
-    model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
-                    weights_path=model_path)
+    model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
+                weights_path=model_path)
 
     # read the steering labels and image path
     df_truth = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
@@ -28,11 +28,7 @@ def validation_score(model_path, type, save=False, debugging=False):
     input = []
     predictions = []
 
-    if type == 'flow':
-
-        raise Exception('Sorry, the model type is not supported')
-
-    elif type == 'rgb':
+    if type == 'rgb':
 
         start_time = time.time()
 
@@ -105,6 +101,39 @@ def validation_score(model_path, type, save=False, debugging=False):
 
             if len(predictions) % 1000 == 0:
                 print('.')
+
+    elif type == 'flow':
+
+        print('Started')
+
+        start_time = time.time()
+
+        previous = helper.load_image(configs.TRAIN_DIR + str(df_truth[0][1]))
+
+        for i in range(1, configs.LENGTH + 1):
+
+            img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
+            flow = helper.optical_flow(previous=previous, current=img)
+            input.append(flow)
+
+        previous = helper.load_image(configs.TRAIN_DIR + str(df_truth[configs.LENGTH + 1][1]))
+
+        for i in range(configs.LENGTH + 2, len(df_truth)):
+
+            img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
+            flow = helper.optical_flow(previous, img)
+            input.pop(0)
+            input.append(flow)
+            input_array = np.array([np.asarray(input)])
+            prediction = model.model.predict(input_array)[0][0]
+            actual_steers = df_truth[i][2]
+            e = (actual_steers - prediction) ** 2
+            esum += e
+
+            predictions.append(prediction)
+
+            if len(predictions) % 1000 == 0:
+                print('.')
     else:
         raise Exception('Sorry, the model type is not recognized')
 
@@ -121,7 +150,7 @@ def validation_score(model_path, type, save=False, debugging=False):
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('./i3d_speed_comma_multiflow_32_4.h5', type='rgb-flow', debugging=False)
+    score = validation_score('./i3d_speed_comma_flow_32_7.h5', type='flow', debugging=False)
     print("Finished!")
     print(score)
 

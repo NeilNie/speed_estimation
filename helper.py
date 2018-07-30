@@ -170,6 +170,15 @@ def optical_flow_rgb(previous, current):
     return rgbImg
 
 
+def optical_flow(previous, current):
+
+    gray1 = cv2.cvtColor(previous, cv2.COLOR_RGB2GRAY)
+    gray2 = cv2.cvtColor(current, cv2.COLOR_RGB2GRAY)
+    flow = cv2.calcOpticalFlowFarneback(gray1, gray2, None, 0.5, 3, 15, 3, 5, 1.5, 0)
+
+    return flow
+
+
 def comma_validation_generator(data, batch_size):
 
     """
