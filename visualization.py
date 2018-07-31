@@ -17,6 +17,7 @@ import pylab
 from i3d import i3d
 import helper
 import configs
+import time
 
 pygame.init()
 size = (640, 650)
@@ -31,7 +32,8 @@ PI_RAD = (180 / np.pi)
 red = (255, 0, 0)
 blue = (0, 0, 255)
 
-def test_loop():
+
+def test_loop(model_path, model_type):
 
     '''
     for visualizing the model with the comma AI
@@ -39,10 +41,11 @@ def test_loop():
     '''
 
     # ------------------------------------------------
-    model = i3d(weights_path='i3d_speed_c_64_10.h5', input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
+    model = i3d(weights_path=model_path, input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
 
     # read the steering labels and image path
-    files = os.listdir('/home/neil/dataset/speedchallenge/data/test')
+    TEST_DIR = '/home/neil/dataset/speedchallenge/data/test'
+    files = os.listdir(TEST_DIR)
 
     # Create second screen with matplotlibs
     fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
@@ -59,57 +62,84 @@ def test_loop():
     input = []
     starting_index = 8000
 
-    for i in range(starting_index, starting_index + 64):
-        img = helper.load_image("/home/neil/dataset/speedchallenge/data/test/" + "frame" + str(i) + ".jpg")
-        input.append(img)
+    if model_type == 'rgb':
 
-    # Run through all images
-    for i in range(starting_index + 65, len(files)-1):
+        for i in range(starting_index, starting_index + configs.LENGTH):
+            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg")
+            input.append(img)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                break
+        # Run through all images
+        for i in range(starting_index + configs.LENGTH + 1, len(files) - 1):
 
-        img = helper.load_image("/home/neil/dataset/speedchallenge/data/test/" + "frame" + str(i) + ".jpg", resize=False)
-        in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
-        input.pop(0)
-        input.append(in_frame)
-        input_array = np.array([input])
-        prediction = model.model.predict(input_array)[0][0]
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    break
 
-        if prediction <= 10:
-            speed_label = myFont.render('Slow', 1, blue)
-        elif prediction > 10 and prediction <= 25:
-            speed_label = myFont.render('Medium', 1, blue)
-        elif prediction > 25 and prediction <= 40:
-            speed_label = myFont.render('Fast', 1, blue)
-        else:
-            speed_label = myFont.render('Very Fast', 1, blue)
+            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+            input.pop(0)
+            input.append(in_frame)
+            input_array = np.array([input])
+            prediction = model.model.predict(input_array)[0][0]
 
-        A.append(prediction)
-        line1.set_ydata(A)
-        line1.set_xdata(range(len(A)))
-        ax.relim()
-        ax.autoscale_view()
+    elif model_type == 'flow':
 
-        canvas = agg.FigureCanvasAgg(fig)
-        canvas.draw()
-        renderer = canvas.get_renderer()
-        raw_data = renderer.tostring_rgb()
-        size = canvas.get_width_height()
-        surf = pygame.image.fromstring(raw_data, size, "RGB")
-        screen.blit(surf, (0, 480))
+        previous = helper.load_image(TEST_DIR + "frame" + str(starting_index) + ".jpg", resize=False)
 
-        # draw on
-        pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
-        screen.blit(camera_surface, (0, 0))
+        for i in range(starting_index, starting_index + configs.LENGTH):
 
-        diceDisplay = myFont.render(str(prediction), 1, blue)
-        screen.blit(randNumLabel, (50, 420))
-        screen.blit(speed_label, (200, 420))
-        screen.blit(diceDisplay, (50, 450))
-        clock.tick(60)
-        pygame.display.flip()
+            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg")
+            flow = helper.optical_flow(previous=previous, current=img)
+            input.append(flow)
+
+        previous = helper.load_image(TEST_DIR + "frame" + str(starting_index + configs.LENGTH) + ".jpg", resize=False)
+
+        for i in range(starting_index + configs.LENGTH + 1, len(files) - 1):
+
+            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            # TODO:
+            flow = helper.optical_flow(previous, img)
+            input.pop(0)
+            input.append(flow)
+            input_array = np.array([np.asarray(input)])
+            prediction = model.model.predict(input_array)[0][0]
+
+    else:
+        raise Exception('Sorry, the model type is not recognized')
+
+    if prediction <= 10:
+        speed_label = myFont.render('Slow', 1, blue)
+    elif prediction > 10 and prediction <= 25:
+        speed_label = myFont.render('Medium', 1, blue)
+    elif prediction > 25 and prediction <= 40:
+        speed_label = myFont.render('Fast', 1, blue)
+    else:
+        speed_label = myFont.render('Very Fast', 1, blue)
+
+    A.append(prediction)
+    line1.set_ydata(A)
+    line1.set_xdata(range(len(A)))
+    ax.relim()
+    ax.autoscale_view()
+
+    canvas = agg.FigureCanvasAgg(fig)
+    canvas.draw()
+    renderer = canvas.get_renderer()
+    raw_data = renderer.tostring_rgb()
+    size = canvas.get_width_height()
+    surf = pygame.image.fromstring(raw_data, size, "RGB")
+    screen.blit(surf, (0, 480))
+
+    # draw on
+    pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
+    screen.blit(camera_surface, (0, 0))
+
+    diceDisplay = myFont.render(str(prediction), 1, blue)
+    screen.blit(randNumLabel, (50, 420))
+    screen.blit(speed_label, (200, 420))
+    screen.blit(diceDisplay, (50, 450))
+    clock.tick(60)
+    pygame.display.flip()
 
 
 def validation_loop():

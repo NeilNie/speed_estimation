@@ -14,7 +14,6 @@
 from i3d import i3d
 import configs
 import pandas as pd
-import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
@@ -22,14 +21,15 @@ if __name__ == '__main__':
     val_labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
     i3d_flow = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
-                   weights_path='./i3d_speed_comma_flow_' + str(configs.LENGTH) + '_6.h5')
+                   weights_path='./i3d_speed_comma_flow_' + str(configs.LENGTH) + '_2.h5')
     i3d_flow.summary()
 
     i3d_flow.train(type='flow', labels=labels, val_labels=val_labels,
-                   epochs=3, epoch_steps=2000,
-                   validation=True, val_steps=1000,
-                   save_path='./i3d_speed_comma_flow_' + str(configs.LENGTH) + '_7.h5')
+                   epochs=5, epoch_steps=2000,
+                   validation=True, val_steps=1500,
+                   save_path='./i3d_speed_comma_flow_' + str(configs.LENGTH) + '_3.h5')
 
+    # flow RGB
     # i3d_model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
     #                 weights_path='./i3d_speed_comma_multiflow_' + str(configs.LENGTH) + '_5.h5')
     # i3d_model.summary()
@@ -39,5 +39,6 @@ if __name__ == '__main__':
     #                 validation=True, val_steps=1000,
     #                 save_path='./i3d_speed_comma_multiflow_' + str(configs.LENGTH) + '_6.h5')
 
+    # single frame
     # model = ConvModel(input_shape=(configs.IMG_HEIGHT, configs.IMG_WIDTH, 3), weights_path='./conv_speed_comma_frgb_1.h5')
     # model.train(type='flow', epochs=2, epoch_steps=1000, validation=True, val_steps=200, save_path='./conv_speed_comma_frgb_2.h5')

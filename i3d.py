@@ -261,7 +261,7 @@ class i3d:
 
         return model
 
-    def create_model(self, img_input, optimizer=SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)):
+    def create_model(self, img_input, optimizer=SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)):
 
         '''create and return the i3d model
         :param: img_input: input shape of the network.
