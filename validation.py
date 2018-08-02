@@ -11,21 +11,21 @@ from os import path
 import pandas as pd
 import numpy as np
 import helper
-import math
+import communication
 import time
 import matplotlib.pyplot as plt
 
 
 def validation_score(model_path, type, save=False, debugging=False):
 
-    model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
+    model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
                 weights_path=model_path)
 
     # read the steering labels and image path
     df_truth = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
-    esum = 0
-    input = []
+    e_sum = 0
+    inputs = []
     predictions = []
 
     if type == 'rgb':
@@ -35,20 +35,18 @@ def validation_score(model_path, type, save=False, debugging=False):
         for i in range(configs.LENGTH):
             file = configs.TRAIN_DIR + str(df_truth[i][1])
             img = helper.load_image(file)
-            input.append(img)
+            inputs.append(img)
 
         # Run through all images
         for i in range(configs.LENGTH, len(df_truth)):
 
             p = configs.TRAIN_DIR + str(df_truth[i][1])
             img = helper.load_image(p)
-            input.pop(0)
-            input.append(img)
-            input_array = np.array([np.asarray(input)])
-            prediction = model.model.predict(input_array)[0][0]
-            actual_steers = df_truth[i][2]
-            e = (actual_steers - prediction) ** 2
-            esum += e
+            inputs.pop(0)
+            inputs.append(img)
+            prediction = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
+            actual_speed = df_truth[i][2]
+            e_sum += (actual_speed - prediction) ** 2
 
             predictions.append(prediction)
 
@@ -68,12 +66,12 @@ def validation_score(model_path, type, save=False, debugging=False):
             img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
             rgbImg = helper.optical_flow_rgb(previous=previous, current=img)
             if debugging:
-                # fig = plt.figure(figsize=(3, 1))
-                # fig.add_subplot(1, 1, 1)
+                fig = plt.figure(figsize=(3, 1))
+                fig.add_subplot(1, 3, 1)
                 plt.imshow(rgbImg)
-                # fig.add_subplot(1, 2, 1)
+                fig.add_subplot(1, 3, 2)
                 plt.imshow(previous)
-                # fig.add_subplot(1, 3, 1)
+                fig.add_subplot(1, 3, 3)
                 plt.imshow(img)
                 plt.show()
 
@@ -95,7 +93,7 @@ def validation_score(model_path, type, save=False, debugging=False):
             prediction = model.model.predict(input_array)[0][0]
             actual_steers = df_truth[i][2]
             e = (actual_steers - prediction) ** 2
-            esum += e
+            e_sum += e
 
             predictions.append(prediction)
 
@@ -114,7 +112,7 @@ def validation_score(model_path, type, save=False, debugging=False):
 
             img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
             flow = helper.optical_flow(previous=previous, current=img)
-            input.append(flow)
+            inputs.append(flow)
 
         previous = helper.load_image(configs.TRAIN_DIR + str(df_truth[configs.LENGTH + 1][1]))
 
@@ -122,13 +120,11 @@ def validation_score(model_path, type, save=False, debugging=False):
 
             img = helper.load_image(configs.TRAIN_DIR + str(df_truth[i][1]))
             flow = helper.optical_flow(previous, img)
-            input.pop(0)
-            input.append(flow)
-            input_array = np.array([np.asarray(input)])
-            prediction = model.model.predict(input_array)[0][0]
+            inputs.pop(0)
+            inputs.append(flow)
+            prediction = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
             actual_steers = df_truth[i][2]
-            e = (actual_steers - prediction) ** 2
-            esum += e
+            e_sum += (actual_steers - prediction) ** 2
 
             predictions.append(prediction)
 
@@ -144,13 +140,15 @@ def validation_score(model_path, type, save=False, debugging=False):
         pd.DataFrame({"steering_angle": predictions}).to_csv('./result.csv', index=False, header=True)
         print("Done!")
 
-    return esum / len(predictions)
+    return e_sum / len(predictions)
 
 
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('./i3d_speed_comma_flow_64_3.h5', type='flow', debugging=False)
+    score = validation_score('./i3d_speed_comma_rgb_64_2.h5', type='rgb', debugging=False)
     print("Finished!")
     print(score)
+
+    communication.notify_validation_completion(score, './i3d_speed_comma_rgb_64_2.h5')
 

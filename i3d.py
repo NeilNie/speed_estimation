@@ -49,27 +49,22 @@ class i3d:
         '''Instantiates the Inflated 3D Inception v1 architecture.
 
         Optionally loads weights pre-trained on Kinetics. Note that when using TensorFlow,
-        Always channel last. The model and the weights are compatible with both
-        TensorFlow. The data format convention used by the model is the one
-        specified in your Keras config file.
-        Note that the default input frame(image) size for this model is 224x224.
+        Always channel last. The model and the weights are compatible with both TensorFlow. The data format
+        convention used by the model is the one specified in your Keras config file. Note that the default
+        input frame(image) size for this model is 224x224.
 
         :param weights_path: one of `None` (random initialization)
-        :param input_shape: optional shape tuple, only to be specified
-                if `include_top` is False (otherwise the input shape should have exactly
-                3 inputs channels. NUM_FRAMES should be no smaller than 8. The authors
-                used 64 frames per example for training and testing on kinetics dataset
-                Width and height should be no smaller than 32.
-                i.e.: `(64, 150, 150, 3)` would be one valid value.
-        :param dropout_prob: optional, dropout probability applied in dropout layer
-                after global average pooling layer.
-                0.0 means no dropout is applied, 1.0 means dropout is applied to all features.
-                Note: Since Dropout is applied just before the classification
-                layer, it is only useful when `include_top` is set to True.
-        :param classes: For regression (i.e. behavorial cloning) 1 is the default value.
-                optional number of classes to classify images into, only to be specified
-                if `include_top` is True, and if no `weights` argument is specified.
-
+        :param input_shape: optional shape tuple, only to be specified if `include_top` is False
+            (otherwise the input shape should have exactly 3 inputs channels. NUM_FRAMES should be no
+            smaller than 8. The authors used 64 frames per example for training and testing on kinetics
+            dataset Width and height should be no smaller than 32. i.e.: `(64, 150, 150, 3)` would be one
+            valid value.
+        :param dropout_prob: optional, dropout probability applied in dropout layer after global average pooling layer.
+            0.0 means no dropout is applied, 1.0 means dropout is applied to all features. Note: Since Dropout is
+            applied just before the classification layer, it is only useful when `include_top` is set to True.
+        :param classes: For regression (i.e. behavorial cloning) 1 is the default value. optional number of classes
+            to classify images into, only to be specified if `include_top` is True, and if no `weights` argument is
+            specified.
         '''
 
         self.input_shape = input_shape
@@ -112,19 +107,13 @@ class i3d:
             train_gen = helper.comma_flow_batch_gen(batch_size=1, data=labels)
             val_gen = helper.comma_flow_batch_gen(batch_size=1, data=val_labels)
         elif type == 'rgb':
-            train_gen = helper.comma_batch_generator(batch_size=1, data=labels, augment=True)
+            train_gen = helper.comma_batch_generator(batch_size=2, data=labels, augment=True)
             val_gen = helper.comma_validation_generator(batch_size=1, data=val_labels)
         elif type == 'rgb-flow':
             train_gen = helper.comma_flow_multi_batch_gen(batch_size=1, data=labels)
             val_gen = helper.comma_flow_multi_batch_gen(batch_size=1, data=val_labels)
         else:
             raise Exception('Sorry, the model type is not recognized')
-
-        # imgs, angles = next(train_gen)
-        # for b in imgs:
-        #     for im in b:
-        #         plt.imshow(im)
-        #         plt.show()
 
         if save_path is None:
             print("[WARNING]: trained model will not be saved. Please specify save_path")

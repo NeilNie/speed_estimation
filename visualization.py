@@ -32,32 +32,34 @@ PI_RAD = (180 / np.pi)
 red = (255, 0, 0)
 blue = (0, 0, 255)
 
+# Create second screen with matplotlibs
+fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
+ax = fig.gca()
+ax.tick_params(axis='x', labelsize=8)
+ax.tick_params(axis='y', labelsize=8)
+line1, = ax.plot([], [], 'b.-', label='Human')
+A = []
+ax.legend(loc='upper left', fontsize=8)
+
+myFont = pygame.font.SysFont("monospace", 18)
+randNumLabel = myFont.render('Human Driving Speed:', 1, blue)
+
 
 def test_loop(model_path, model_type):
 
     '''
     for visualizing the model with the comma AI
     test dataset. The ds doesn't contain training labels.
+
+    :param model_path:
+    :param model_type:
+    :return:
     '''
 
-    # ------------------------------------------------
     model = i3d(weights_path=model_path, input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
 
     # read the steering labels and image path
-    TEST_DIR = '/home/neil/dataset/speedchallenge/data/test'
-    files = os.listdir(TEST_DIR)
-
-    # Create second screen with matplotlibs
-    fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
-    ax = fig.gca()
-    ax.tick_params(axis='x', labelsize=8)
-    ax.tick_params(axis='y', labelsize=8)
-    line1, = ax.plot([], [], 'b.-', label='Human')
-    A = []
-    ax.legend(loc='upper left', fontsize=8)
-
-    myFont = pygame.font.SysFont("monospace", 18)
-    randNumLabel = myFont.render('Human Driving Speed:', 1, blue)
+    files = os.listdir(configs.TEST_DIR)
 
     input = []
     starting_index = 8000
@@ -65,7 +67,7 @@ def test_loop(model_path, model_type):
     if model_type == 'rgb':
 
         for i in range(starting_index, starting_index + configs.LENGTH):
-            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg")
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg")
             input.append(img)
 
         # Run through all images
@@ -75,37 +77,45 @@ def test_loop(model_path, model_type):
                 if event.type == pygame.QUIT:
                     break
 
-            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
             in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
             input.pop(0)
             input.append(in_frame)
             input_array = np.array([input])
             prediction = model.model.predict(input_array)[0][0]
 
+            pygame_loop(prediction=prediction, img=img)
+
     elif model_type == 'flow':
 
-        previous = helper.load_image(TEST_DIR + "frame" + str(starting_index) + ".jpg", resize=False)
+        previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index) + ".jpg")
 
         for i in range(starting_index, starting_index + configs.LENGTH):
 
-            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg")
-            flow = helper.optical_flow(previous=previous, current=img)
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg")
+            in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+            flow = helper.optical_flow(previous=previous, current=in_frame)
             input.append(flow)
 
-        previous = helper.load_image(TEST_DIR + "frame" + str(starting_index + configs.LENGTH) + ".jpg", resize=False)
+        previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index + configs.LENGTH) + ".jpg")
 
         for i in range(starting_index + configs.LENGTH + 1, len(files) - 1):
 
-            img = helper.load_image(TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
-            # TODO:
-            flow = helper.optical_flow(previous, img)
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+            flow = helper.optical_flow(previous, in_frame)
             input.pop(0)
             input.append(flow)
             input_array = np.array([np.asarray(input)])
             prediction = model.model.predict(input_array)[0][0]
 
+            pygame_loop(prediction=prediction, img=img)
+
     else:
         raise Exception('Sorry, the model type is not recognized')
+
+
+def pygame_loop(prediction, img):
 
     if prediction <= 10:
         speed_label = myFont.render('Slow', 1, blue)
@@ -226,5 +236,4 @@ def validation_loop():
 
 if __name__ == "__main__":
 
-    # cruise_control_viz_loop()
-    test_loop()
+    test_loop(model_path='', model_type='')
