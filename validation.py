@@ -146,7 +146,7 @@ def validation_score(model_path, type, save=False, debugging=False):
 if __name__ == "__main__":
 
     print("Validating...")
-    model_path = './i3d_speed_comma_flow_32_9.h5'
+    model_path = './i3d_speed_comma_rgb_32_3.h5'
     score = validation_score(model_path=model_path, type='flow', debugging=False)
     print("Finished!")
     print(score)

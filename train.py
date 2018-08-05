@@ -18,25 +18,24 @@ import communication
 
 if __name__ == '__main__':
 
-    load_model_name = './i3d_speed_comma_flow_' + str(configs.LENGTH) + '_8.h5'
-    save_model_name = './i3d_speed_comma_flow_' + str(configs.LENGTH) + '_9.h5'
+    load_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_2.h5'
+    save_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_3.h5'
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
     val_labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
-    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
+    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3),
                    weights_path=load_model_name)
     i3d_flow.summary()
 
-    i3d_flow.train(type='flow', labels=labels,
+    i3d_flow.train(type='rgb', labels=labels,
                    val_labels=val_labels,
-                   epochs=3, epoch_steps=800,
+                   epochs=5, epoch_steps=1000,
                    validation=True, val_steps=500,
                    save_path=save_model_name,
-                   log_path='logs/flow_32')
+                   log_path='logs/rgb_32')
 
     communication.notify_training_completion(save_model_name)
-
 
     # single frame
     # model = ConvModel(input_shape=(configs.IMG_HEIGHT, configs.IMG_WIDTH, 3), weights_path='./conv_speed_comma_frgb_1.h5')

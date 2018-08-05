@@ -53,17 +53,14 @@ def test_loop(model_path, model_type):
 
     print(colored('Preparing', 'blue'))
 
-    model = Inception3D(weights_path=model_path, input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS))
+    model = Inception3D(weights_path=model_path, input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2))
 
     # read the steering labels and image path
     files = os.listdir(configs.TEST_DIR)
 
     inputs = []
-    starting_index = 10000
-
-    start = input("prompt")
-    if start is not 'start':
-        exit(0)
+    starting_index = 8000
+    end_index = 1000
 
     if model_type == 'rgb':
 
@@ -74,7 +71,7 @@ def test_loop(model_path, model_type):
         print(colored('Started', 'blue'))
 
         # Run through all images
-        for i in range(starting_index + configs.LENGTH + 1, len(files) - 1):
+        for i in range(starting_index + configs.LENGTH + 1, len(files) - 1 - end_index):
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -84,8 +81,7 @@ def test_loop(model_path, model_type):
             in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
             inputs.pop(0)
             inputs.append(in_frame)
-            input_array = np.array([input])
-            prediction = model.model.predict(input_array)[0][0]
+            prediction = model.model.predict(np.array([inputs]))[0][0]
 
             pygame_loop(prediction=prediction, img=img)
 
@@ -102,7 +98,7 @@ def test_loop(model_path, model_type):
 
         previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index + configs.LENGTH) + ".jpg")
 
-        for i in range(starting_index + configs.LENGTH + 1, len(files) - 1):
+        for i in range(starting_index + configs.LENGTH + 1, len(files) - 1 - end_index):
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -161,4 +157,4 @@ def pygame_loop(prediction, img):
 
 if __name__ == "__main__":
 
-    test_loop(model_path='i3d_speed_comma_rgb_64_3.h5', model_type='rgb')
+    test_loop(model_path='i3d_speed_comma_flow_32_9.h5', model_type='flow')
