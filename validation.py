@@ -4,7 +4,7 @@
 #
 
 
-from i3d import i3d
+from i3d import Inception3D
 import cv2
 import configs
 from os import path
@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 
 def validation_score(model_path, type, save=False, debugging=False):
 
-    model = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
-                weights_path=model_path)
+    model = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
+                        weights_path=model_path)
 
     # read the steering labels and image path
     df_truth = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
@@ -76,7 +76,7 @@ def validation_score(model_path, type, save=False, debugging=False):
                 plt.show()
 
             previous = img
-            input.append(rgbImg)
+            inputs.append(rgbImg)
 
         previous = helper.load_image(configs.TRAIN_DIR + str(df_truth[configs.LENGTH + 1][1]))
 
@@ -87,9 +87,9 @@ def validation_score(model_path, type, save=False, debugging=False):
             if debugging:
                 plt.imshow(rgb_flow)
                 plt.show()
-            input.pop(0)
-            input.append(rgb_flow)
-            input_array = np.array([np.asarray(input)])
+            inputs.pop(0)
+            inputs.append(rgb_flow)
+            input_array = np.array([np.asarray(inputs)])
             prediction = model.model.predict(input_array)[0][0]
             actual_steers = df_truth[i][2]
             e = (actual_steers - prediction) ** 2
@@ -146,9 +146,10 @@ def validation_score(model_path, type, save=False, debugging=False):
 if __name__ == "__main__":
 
     print("Validating...")
-    score = validation_score('./i3d_speed_comma_rgb_64_2.h5', type='rgb', debugging=False)
+    model_path = './i3d_speed_comma_flow_32_9.h5'
+    score = validation_score(model_path=model_path, type='flow', debugging=False)
     print("Finished!")
     print(score)
 
-    communication.notify_validation_completion(score, './i3d_speed_comma_rgb_64_2.h5')
+    communication.notify_validation_completion(score, model_path)
 

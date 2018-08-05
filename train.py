@@ -11,30 +11,29 @@
 # Contact: contact@neilnie.com
 #
 
-from i3d import i3d
+from i3d import Inception3D
 import configs
 import pandas as pd
 import communication
 
 if __name__ == '__main__':
 
-    load_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_1.h5'
-    save_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_2.h5'
+    load_model_name = './i3d_speed_comma_flow_' + str(configs.LENGTH) + '_8.h5'
+    save_model_name = './i3d_speed_comma_flow_' + str(configs.LENGTH) + '_9.h5'
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
     val_labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
-    i3d_flow = i3d(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS),
+    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
                    weights_path=load_model_name)
     i3d_flow.summary()
 
-
-    i3d_flow.train(type='rgb', labels=labels,
+    i3d_flow.train(type='flow', labels=labels,
                    val_labels=val_labels,
-                   epochs=5, epoch_steps=1000,
-                   validation=True, val_steps=1000,
+                   epochs=3, epoch_steps=800,
+                   validation=True, val_steps=500,
                    save_path=save_model_name,
-                   log_path='logs/rgb_64')
+                   log_path='logs/flow_32')
 
     communication.notify_training_completion(save_model_name)
 

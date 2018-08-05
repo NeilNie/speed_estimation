@@ -14,12 +14,6 @@ Contact: contact@neilnie.com
 
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-
-import warnings
-
-
 from keras.models import Model
 from keras import layers
 from keras.layers import Activation
@@ -33,20 +27,16 @@ from keras.layers import Dropout
 from keras.layers import Reshape
 from keras.optimizers import SGD
 from keras.layers import Flatten
-from keras.models import load_model
 from keras.callbacks import TensorBoard
 import datetime
-from keras import backend as K
-import pandas as pd
 import helper
-import matplotlib.pyplot as plt
 
 
-class i3d:
+class Inception3D:
 
     def __init__(self, weights_path=None, input_shape=None, dropout_prob=0.0, classes=1):
 
-        '''Instantiates the Inflated 3D Inception v1 architecture.
+        """Instantiates the Inflated 3D Inception v1 architecture.
 
         Optionally loads weights pre-trained on Kinetics. Note that when using TensorFlow,
         Always channel last. The model and the weights are compatible with both TensorFlow. The data format
@@ -65,16 +55,12 @@ class i3d:
         :param classes: For regression (i.e. behavorial cloning) 1 is the default value. optional number of classes
             to classify images into, only to be specified if `include_top` is True, and if no `weights` argument is
             specified.
-        '''
+        """
 
         self.input_shape = input_shape
         self.dropout_prob = dropout_prob
         self.classes = classes
         self.weight_path = weights_path
-
-        input_shape = self._obtain_input_shape(self.input_shape, default_frame_size=224,
-                                               min_frame_size=32, default_num_frames=64,
-                                               min_num_frames=1, data_format=K.image_data_format())  # weights=weights
 
         img_input = Input(shape=input_shape)
         self.model = self.create_model(img_input)
@@ -88,7 +74,7 @@ class i3d:
 
     def train(self, labels, val_labels, type, epochs=10, epoch_steps=5000, val_steps=None, validation=False, log_path="logs/flow", save_path=None):
 
-        '''training the model
+        """training the model
 
         :param type: tye type of model. Choices are: flow or rgb
         :param labels: numpy array of training labels
@@ -101,11 +87,11 @@ class i3d:
         :param val_steps: number of validation steps
         :param log_path: training log path.
         :param validation: run validation or not. If not validating, val_gen and val_steps can be non.
-        '''
+        """
 
         if type == 'flow':
-            train_gen = helper.comma_flow_batch_gen(batch_size=1, data=labels)
-            val_gen = helper.comma_flow_batch_gen(batch_size=1, data=val_labels)
+            train_gen = helper.comma_flow_batch_gen(batch_size=2, data=labels)
+            val_gen = helper.comma_flow_batch_gen(batch_size=2, data=val_labels)
         elif type == 'rgb':
             train_gen = helper.comma_batch_generator(batch_size=2, data=labels, augment=True)
             val_gen = helper.comma_validation_generator(batch_size=1, data=val_labels)
@@ -136,11 +122,11 @@ class i3d:
 
     def create_small_model(self, img_input, optimizer=SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)):
 
-        '''create and return the i3d model
+        """create and return the i3d model
 
         :param: img_input: input shape of the network.
         :return: A Keras model instance.
-        '''
+        """
 
         # Determine proper input shape
 
@@ -252,10 +238,10 @@ class i3d:
 
     def create_model(self, img_input, optimizer=SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)):
 
-        '''create and return the i3d model
+        """create and return the i3d model
         :param: img_input: input shape of the network.
         :return: A Keras model instance.
-        '''
+        """
 
         # Determine proper input shape
 
@@ -427,7 +413,7 @@ class i3d:
     def conv3d_bath_norm(x, filters, num_frames, num_row, num_col, padding='same', strides=(1, 1, 1),
                          use_bias=False, use_activation_fn=True, use_bn=True, name=None):
 
-        '''
+        """
 
         :param x: input tensor.
         :param filters: filters in `Conv3D`.
@@ -443,7 +429,7 @@ class i3d:
                 for the convolution and `name + '_bn'` for the
                 batch norm layer.
         :return: Output tensor after applying `Conv3D` and `BatchNormalization`.
-        '''
+        """
 
         if name is not None:
             bn_name = name + '_bn'
@@ -463,86 +449,3 @@ class i3d:
             x = Activation('relu', name=name)(x)
 
         return x
-
-    @staticmethod
-    def _obtain_input_shape(input_shape, default_frame_size, min_frame_size, default_num_frames,
-                            min_num_frames, data_format, weights=None):
-
-        """Internal utility to compute/validate the model's input shape.
-        (Adapted from `keras/applications/imagenet_utils.py`)
-
-        # Arguments
-            input_shape: either None (will return the default network input shape),
-                or a user-provided shape to be validated.
-            default_frame_size: default input frames(images) width/height for the model.
-            min_frame_size: minimum input frames(images) width/height accepted by the model.
-            default_num_frames: default input number of frames(images) for the model.
-            min_num_frames: minimum input number of frames accepted by the model.
-            data_format: image data format to use.
-            require_flatten: whether the model is expected to
-                be linked to a classifier via a Flatten layer.
-            weights: one of `None` (random initialization)
-                or 'kinetics_only' (pre-training on Kinetics dataset).
-                or 'imagenet_and_kinetics' (pre-training on ImageNet and Kinetics datasets).
-                If weights='kinetics_only' or weights=='imagenet_and_kinetics' then
-                input channels must be equal to 3.
-
-        # Returns
-            An integer shape tuple (may include None entries).
-
-        # Raises
-            ValueError: in case of invalid argument values.
-        """
-        if weights != 'kinetics_only' and weights != 'imagenet_and_kinetics' and input_shape and len(input_shape) == 4:
-            if data_format == 'channels_first':
-                if input_shape[0] not in {1, 3}:
-                    warnings.warn(
-                        'This model usually expects 1 or 3 input channels. '
-                        'However, it was passed an input_shape with ' +
-                        str(input_shape[0]) + ' input channels.')
-                default_shape = (input_shape[0], default_num_frames, default_frame_size, default_frame_size)
-            else:
-                if input_shape[-1] not in {1, 3}:
-                    warnings.warn(
-                        'This model usually expects 1 or 3 input channels. '
-                        'However, it was passed an input_shape with ' +
-                        str(input_shape[-1]) + ' input channels.')
-                default_shape = (default_num_frames, default_frame_size, default_frame_size, input_shape[-1])
-        else:
-            default_shape = (default_num_frames, default_frame_size, default_frame_size, 3)
-
-        if weights == 'kinetics_only' or weights == 'imagenet_and_kinetics':
-            if input_shape is not None:
-                if input_shape != default_shape:
-                    raise ValueError('When setting`include_top=True` '
-                                     'and loading `imagenet` weights, '
-                                     '`input_shape` should be ' +
-                                     str(default_shape) + '.')
-            return default_shape
-
-        if input_shape:
-
-            if input_shape is not None:
-                if len(input_shape) != 4:
-                    raise ValueError('`input_shape` must be a tuple of four integers.')
-                if input_shape[-1] != 3 and (weights == 'kinetics_only' or weights == 'imagenet_and_kinetics'):
-                    raise ValueError('The input must have 3 channels; got '
-                                     '`input_shape=' + str(input_shape) + '`')
-
-                if input_shape[0] is not None and input_shape[0] < min_num_frames:
-                    raise ValueError('Input number of frames must be at least ' +
-                                     str(min_num_frames) + '; got '
-                                                           '`input_shape=' + str(input_shape) + '`')
-
-                if ((input_shape[1] is not None and input_shape[1] < min_frame_size) or
-                        (input_shape[2] is not None and input_shape[2] < min_frame_size)):
-                    raise ValueError('Input size must be at least ' +
-                                     str(min_frame_size) + 'x' + str(min_frame_size) + '; got '
-                                     '`input_shape=' + str(input_shape) + '`')
-
-        else:
-            input_shape = default_shape
-
-        return input_shape
-
-
