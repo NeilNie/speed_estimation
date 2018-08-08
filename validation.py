@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 def validation_score(model_path, type, save=False, debugging=False):
 
-    model = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2),
+    model = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3),
                         weights_path=model_path)
 
     # read the steering labels and image path
@@ -146,8 +146,8 @@ def validation_score(model_path, type, save=False, debugging=False):
 if __name__ == "__main__":
 
     print("Validating...")
-    model_path = './i3d_speed_comma_rgb_32_3.h5'
-    score = validation_score(model_path=model_path, type='flow', debugging=False)
+    model_path = './i3d_speed_comma_rgb_64_3.h5'
+    score = validation_score(model_path=model_path, type='rgb', debugging=False)
     print("Finished!")
     print(score)
 

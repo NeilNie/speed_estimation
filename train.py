@@ -18,8 +18,8 @@ import communication
 
 if __name__ == '__main__':
 
-    load_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_2.h5'
-    save_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_3.h5'
+    load_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_3.h5'
+    save_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_5.h5'
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
     val_labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
@@ -30,10 +30,10 @@ if __name__ == '__main__':
 
     i3d_flow.train(type='rgb', labels=labels,
                    val_labels=val_labels,
-                   epochs=5, epoch_steps=1000,
+                   epochs=5, epoch_steps=800,
                    validation=True, val_steps=500,
                    save_path=save_model_name,
-                   log_path='logs/rgb_32')
+                   log_path='logs/rgb_64')
 
     communication.notify_training_completion(save_model_name)
 
