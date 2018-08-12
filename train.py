@@ -36,7 +36,3 @@ if __name__ == '__main__':
                    log_path='logs/rgb_64')
 
     communication.notify_training_completion(save_model_name)
-
-    # single frame
-    # model = ConvModel(input_shape=(configs.IMG_HEIGHT, configs.IMG_WIDTH, 3), weights_path='./conv_speed_comma_frgb_1.h5')
-    # model.train(type='flow', epochs=2, epoch_steps=1000, validation=True, val_steps=200, save_path='./conv_speed_comma_frgb_2.h5')
