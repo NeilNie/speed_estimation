@@ -6,6 +6,7 @@ Revised and used by Neil Nie
 
 import matplotlib.backends.backend_agg as agg
 import numpy as np
+import pandas as pd
 import cv2
 import pygame
 import os
@@ -32,8 +33,10 @@ fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
 ax = fig.gca()
 ax.tick_params(axis='x', labelsize=8)
 ax.tick_params(axis='y', labelsize=8)
-line1, = ax.plot([], [], 'b.-', label='Human')
-A = []
+line1, = ax.plot([], [], 'b.-', label='Model')
+line2, = ax.plot([], [], 'r.-', label='Human')
+a = []
+b = []
 ax.legend(loc='upper left', fontsize=8)
 
 myFont = pygame.font.SysFont("monospace", 18)
@@ -43,8 +46,9 @@ randNumLabel = myFont.render('Human Driving Speed:', 1, white)
 def test_loop(model_path, model_type):
 
     """
-    for visualizing the model with the comma AI
-    test dataset. The ds doesn't contain training labels.
+    for visualizing acceleration models with the comma AI
+    validation dataset. The speed is initialized before
+    acceleration prediction starts.
 
     :param model_path: the path of the trained Keras model
     :param model_type: the type of model, rgb, flow or rgb-flow
@@ -83,7 +87,7 @@ def test_loop(model_path, model_type):
             inputs.append(in_frame)
             prediction = model.model.predict(np.array([inputs]))[0][0]
 
-            pygame_loop(prediction=prediction, img=img)
+            pygame_loop(label=0, prediction=prediction, img=img)
 
     elif model_type == 'flow':
 
@@ -112,13 +116,13 @@ def test_loop(model_path, model_type):
             input_array = np.array([np.asarray(inputs)])
             prediction = model.model.predict(input_array)[0][0]
 
-            pygame_loop(prediction=prediction, img=img)
+            pygame_loop(label=0, prediction=prediction, img=img)
 
     else:
         raise Exception('Sorry, the model type is not recognized')
 
 
-def pygame_loop(prediction, img):
+def pygame_loop(prediction, label, img):
 
     if prediction <= 10:
         speed_label = myFont.render('Slow', 1, white)
@@ -129,9 +133,14 @@ def pygame_loop(prediction, img):
     else:
         speed_label = myFont.render('Very Fast', 1, white)
 
-    A.append(prediction)
-    line1.set_ydata(A)
-    line1.set_xdata(range(len(A)))
+    # a is prediction
+    # b is label
+    a.append(prediction)
+    b.append(label)
+    line1.set_ydata(a)
+    line1.set_xdata(range(len(a)))
+    line2.set_ydata(b)
+    line2.set_xdata(range(len(b)))
     ax.relim()
     ax.autoscale_view()
 
@@ -155,10 +164,76 @@ def pygame_loop(prediction, img):
     pygame.display.flip()
 
 
-def visualize_csv_results(file_paths):
-    return 0
+def visualize_accel(model_path, label_path, model_type):
+
+    print(colored('Preparing', 'blue'))
+
+    model = Inception3D(weights_path=model_path, input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3))
+
+    # read the steering labels and image path
+    labels = pd.read_csv(label_path).values
+
+    inputs = []
+    starting_index = 8000
+    end_index = 1000
+
+    init_speed = labels[starting_index][2]
+
+    if model_type == 'rgb':
+
+        for i in range(starting_index, starting_index + configs.LENGTH):
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg")
+            inputs.append(img)
+
+        print(colored('Started', 'blue'))
+
+        # Run through all images
+        for i in range(starting_index + configs.LENGTH + 1, len(labels) - 1 - end_index):
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    break
+
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+            inputs.pop(0)
+            inputs.append(in_frame)
+            pred_accel = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
+            label_accel = (labels[i][2] - labels[i - 1][2]) * 0.44704 / 0.05
+            pygame_loop(label=label_accel, prediction=pred_accel, img=img)
+
+    elif model_type == 'flow':
+
+        previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index) + ".jpg")
+
+        for i in range(starting_index, starting_index + configs.LENGTH):
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg")
+            in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+            flow = helper.optical_flow(previous=previous, current=in_frame)
+            inputs.append(flow)
+
+        previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index + configs.LENGTH) + ".jpg")
+
+        for i in range(starting_index + configs.LENGTH + 1, len(labels) - 1 - end_index):
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    break
+
+            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
+            flow = helper.optical_flow(previous, in_frame)
+            inputs.pop(0)
+            inputs.append(flow)
+            pred_accel = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
+            label_accel = (labels[i][2] - labels[i-1][2]) * 0.44704 / 0.05
+            pygame_loop(label=label_accel, prediction=pred_accel, img=img)
+
+    else:
+        raise Exception('Sorry, the model type is not recognized')
 
 
 if __name__ == "__main__":
 
-    test_loop(model_path='i3d_speed_comma_flow_32_9.h5', model_type='flow')
+    # test_loop(model_path='i3d_speed_comma_flow_32_9.h5', model_type='flow')
+    visualize_accel(label_path='/home/neil/dataset/speedchallenge/data/validation.csv', model_path='', model_type='rgb')

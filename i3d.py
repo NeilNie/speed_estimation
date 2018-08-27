@@ -93,11 +93,14 @@ class Inception3D:
             train_gen = helper.comma_flow_batch_gen(batch_size=2, data=labels)
             val_gen = helper.comma_flow_batch_gen(batch_size=2, data=val_labels)
         elif type == 'rgb':
-            train_gen = helper.comma_batch_generator(batch_size=2, data=labels, augment=True)
-            val_gen = helper.comma_validation_generator(batch_size=1, data=val_labels)
-        elif type == 'rgb-flow':
+            train_gen = helper.comma_batch_generator(batch_size=2, data=labels, augment=False)
+            val_gen = helper.comma_batch_generator(batch_size=1, data=val_labels)
+        elif type == 'rgb_flow':
             train_gen = helper.comma_flow_multi_batch_gen(batch_size=1, data=labels)
             val_gen = helper.comma_flow_multi_batch_gen(batch_size=1, data=val_labels)
+        elif type == 'rgb_accel':
+            train_gen = helper.comma_accel_batch_generator(batch_size=2, data=labels, augment=False)
+            val_gen = helper.comma_accel_batch_generator(batch_size=1, data=val_labels)
         else:
             raise Exception('Sorry, the model type is not recognized')
 

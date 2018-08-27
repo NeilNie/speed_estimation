@@ -1,6 +1,15 @@
+"""
+preprocess dataset
+Neil Nie (c) 2018, All Rights Reserved
+Contact: contact@neilnie.com
+
+"""
+
 import cv2
 import numpy as np
 import pandas as pd
+import time
+
 
 def video2frames():
 
@@ -18,11 +27,11 @@ def video2frames():
             print('Read a new frame: ', success)
 
 
-def process_optical_flow(name='tvl1'):
+def process_optical_flow():
 
-    labels = pd.read_csv("/home/neil/dataset/speedchallenge/data/labels.csv").values
+    labels = pd.read_csv("/home/neil/dataset/speedchallenge/data/data.csv").values
     tvl1 = cv2.DualTVL1OpticalFlow_create()
-
+    c = 0
     for i in range(0, len(labels)-2):
 
         path_previous = "/home/neil/dataset/speedchallenge/data/train/" + str(labels[i][1])
@@ -31,14 +40,14 @@ def process_optical_flow(name='tvl1'):
         prev_frame_gray = cv2.cvtColor(cv2.imread(path_previous), cv2.COLOR_BGR2GRAY)
         next_frame_gray = cv2.cvtColor(cv2.imread(path_next), cv2.COLOR_BGR2GRAY)
 
-        if name == 'tvl1':
-            flow = tvl1.calc(prev_frame_gray, next_frame_gray, None)
-        else:
-            flow = cv2.calcOpticalFlowFarneback(prev_frame_gray, next_frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        flow = tvl1.calc(prev_frame_gray, next_frame_gray, None)
 
         np_mat = np.array(flow)
 
-        np.save(file="/home/neil/dataset/speedchallenge/data/train/flow" + labels[i][1], arr=np_mat)
+        np.save(file="/home/neil/dataset/speedchallenge/data/train/flow/frame" + str(i), arr=np_mat)
+        c+=1
+        if c == 100:
+            exit(0)
 
 
 if __name__ == '__main__':

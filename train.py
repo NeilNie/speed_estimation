@@ -18,21 +18,21 @@ import communication
 
 if __name__ == '__main__':
 
-    load_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_3.h5'
-    save_model_name = './i3d_speed_comma_rgb_' + str(configs.LENGTH) + '_5.h5'
+    load_model_name = './i3d_accel_rgb_' + str(configs.LENGTH) + '_1.h5'
+    save_model_name = './i3d_accel_rgb_' + str(configs.LENGTH) + '_1.h5'
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
     val_labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
-    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3),
-                   weights_path=load_model_name)
+    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3))
+                           # weights_path=load_model_name)
     i3d_flow.summary()
 
-    i3d_flow.train(type='rgb', labels=labels,
+    i3d_flow.train(type='rgb_accel', labels=labels,
                    val_labels=val_labels,
                    epochs=5, epoch_steps=800,
                    validation=True, val_steps=500,
                    save_path=save_model_name,
-                   log_path='logs/rgb_64')
+                   log_path='logs/rgb_32_accel')
 
     communication.notify_training_completion(save_model_name)

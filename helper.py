@@ -91,7 +91,7 @@ def flip_image(image):
     return horizontal_img
 
 
-def augument(images, angle):
+def augument(images):
     """
     Generate an augumented image and adjust steering angle.
     (The steering angle is associated with the center image)
@@ -119,7 +119,7 @@ def augument(images, angle):
     #         image = images[idx].astype(np.uint8)
     #         images[idx] = flip_image(image)
 
-    return images, angle
+    return images
 
 
 # ----------------------------------------------------------------
@@ -178,55 +178,55 @@ def optical_flow(previous, current):
 
     return flow
 
-
-def comma_validation_generator(data, batch_size):
-
-    """
-    Generate training images given image paths and associated steering angles
-
-    :param data         : (numpy.array) the loaded data (converted to list from pandas format)
-    :param batch_size   :  (int) batch size for training
-
-    :rtype: Iterator[images, angles] images for training
-    the corresponding steering angles
-
-    """
-
-    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
-    labels = np.empty([batch_size])
-
-    while True:
-
-        c = 0
-
-        for index in np.random.permutation(data.shape[0]):
-
-            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
-
-            if index < configs.LENGTH:
-                start = 0
-                end = configs.LENGTH
-            elif index + configs.LENGTH >= len(data):
-                start = len(data) - configs.LENGTH - 1
-                end = len(data) - 1
-            else:
-                start = index
-                end = index + configs.LENGTH
-
-            for i in range(start, end):
-                center_path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
-                image = load_image(center_path)
-                imgs[i - start] = image
-
-            images[c] = imgs
-            labels[c] = data[end][2]
-
-            c += 1
-
-            if c == batch_size:
-                break
-
-        yield images, labels
+#
+# def comma_validation_generator(data, batch_size):
+#
+#     """
+#     Generate training images given image paths and associated steering angles
+#
+#     :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+#     :param batch_size   :  (int) batch size for training
+#
+#     :rtype: Iterator[images, angles] images for training
+#     the corresponding steering angles
+#
+#     """
+#
+#     images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
+#     labels = np.empty([batch_size])
+#
+#     while True:
+#
+#         c = 0
+#
+#         for index in np.random.permutation(data.shape[0]):
+#
+#             imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
+#
+#             if index < configs.LENGTH:
+#                 start = 0
+#                 end = configs.LENGTH
+#             elif index + configs.LENGTH >= len(data):
+#                 start = len(data) - configs.LENGTH - 1
+#                 end = len(data) - 1
+#             else:
+#                 start = index
+#                 end = index + configs.LENGTH
+#
+#             for i in range(start, end):
+#                 center_path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
+#                 image = load_image(center_path)
+#                 imgs[i - start] = image
+#
+#             images[c] = imgs
+#             labels[c] = data[end][2]
+#
+#             c += 1
+#
+#             if c == batch_size:
+#                 break
+#
+#         yield images, labels
 
 
 def comma_batch_generator(data, batch_size, augment):
@@ -271,13 +271,72 @@ def comma_batch_generator(data, batch_size, augment):
 
             # augmentaion if needed
             if augment and bool(random.getrandbits(1)):
-                imgs, angle = augument(imgs, data[end][2])
-            else:
-                angle = data[end][2]
+                imgs = augument(imgs)
+
+            angle = data[end][2]
 
             images[c] = imgs
             labels[c] = angle
 
+            c += 1
+
+            if c == batch_size:
+                break
+
+        yield images, labels
+
+
+def comma_accel_batch_generator(data, batch_size, augment=False):
+
+    """
+    Generate training images given image paths and associated acceleration commands
+
+    :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+    :param batch_size   :  (int) batch size for training
+    :param training     : (boolean): whether to use augmentation or not.
+
+    :rtype: Iterator[images, angles] images for training
+    the corresponding steering angles
+
+    """
+
+    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
+    labels = np.empty([batch_size])
+
+    while True:
+
+        c = 0
+
+        for index in np.random.permutation(data.shape[0]):
+
+            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, configs.CHANNELS], dtype=np.int32)
+
+            if index < configs.LENGTH:
+                start = 0
+                end = configs.LENGTH
+            elif index + configs.LENGTH >= len(data):
+                start = len(data) - configs.LENGTH - 1
+                end = len(data) - 1
+            else:
+                start = index
+                end = index + configs.LENGTH
+
+            for i in range(start, end):
+                center_path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
+                image = load_image(center_path)
+                imgs[i - start] = image
+
+            # augmentaion if needed (not recommended)
+            if augment and bool(random.getrandbits(1)):
+                imgs = augument(imgs)
+            speed = data[end][2]
+            pre_speed = data[end-1][2]
+
+            images[c] = imgs
+            labels[c] = (speed - pre_speed) * 0.44704 / 0.05 # frame rate
+            print(labels[c])
+            print(speed - pre_speed)
+            exit(0)
             c += 1
 
             if c == batch_size:
