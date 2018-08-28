@@ -333,10 +333,8 @@ def comma_accel_batch_generator(data, batch_size, augment=False):
             pre_speed = data[end-1][2]
 
             images[c] = imgs
-            labels[c] = (speed - pre_speed) * 0.44704 / 0.05 # frame rate
-            print(labels[c])
-            print(speed - pre_speed)
-            exit(0)
+            labels[c] = (speed - pre_speed) / 0.05 # frame rate
+
             c += 1
 
             if c == batch_size:

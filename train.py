@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     i3d_flow.train(type='rgb_accel', labels=labels,
                    val_labels=val_labels,
-                   epochs=5, epoch_steps=800,
+                   epochs=10, epoch_steps=1000,
                    validation=True, val_steps=500,
                    save_path=save_model_name,
                    log_path='logs/rgb_32_accel')

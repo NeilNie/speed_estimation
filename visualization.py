@@ -122,21 +122,26 @@ def test_loop(model_path, model_type):
         raise Exception('Sorry, the model type is not recognized')
 
 
-def pygame_loop(prediction, label, img):
+def pygame_loop(label, prediction, img):
 
-    if prediction <= 10:
-        speed_label = myFont.render('Slow', 1, white)
-    elif prediction > 10 and prediction <= 25:
-        speed_label = myFont.render('Medium', 1, white)
-    elif prediction > 25 and prediction <= 40:
-        speed_label = myFont.render('Fast', 1, white)
+    # if prediction <= 10:
+    #     speed_label = myFont.render('Slow', 1, white)
+    # elif prediction > 10 and prediction <= 25:
+    #     speed_label = myFont.render('Medium', 1, white)
+    # elif prediction > 25 and prediction <= 40:
+    #     speed_label = myFont.render('Fast', 1, white)
+    # else:
+    #     speed_label = myFont.render('Very Fast', 1, white)
+
+    if prediction < 0:
+        speed_label = myFont.render('Slowing', 1, white)
     else:
-        speed_label = myFont.render('Very Fast', 1, white)
+        speed_label = myFont.render('Speeding', 1, white)
 
     # a is prediction
     # b is label
     a.append(prediction)
-    b.append(label)
+    # b.append(label)
     line1.set_ydata(a)
     line1.set_xdata(range(len(a)))
     line2.set_ydata(b)
@@ -174,10 +179,9 @@ def visualize_accel(model_path, label_path, model_type):
     labels = pd.read_csv(label_path).values
 
     inputs = []
-    starting_index = 8000
-    end_index = 1000
-
-    init_speed = labels[starting_index][2]
+    starting_index = 1
+    end_index = 0
+    # init_speed = labels[starting_index][2]
 
     if model_type == 'rgb':
 
@@ -194,17 +198,17 @@ def visualize_accel(model_path, label_path, model_type):
                 if event.type == pygame.QUIT:
                     break
 
-            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            img = helper.load_image("/home/neil/dataset/speedchallenge/data/train/" + str(labels[i][1]), resize=False)
             in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
             inputs.pop(0)
             inputs.append(in_frame)
             pred_accel = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
-            label_accel = (labels[i][2] - labels[i - 1][2]) * 0.44704 / 0.05
+            label_accel = (labels[i][2] - labels[i - 1][2]) / 0.05 # * 0.44704 / 0.05
             pygame_loop(label=label_accel, prediction=pred_accel, img=img)
 
     elif model_type == 'flow':
 
-        previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index) + ".jpg")
+        previous = helper.load_image("/home/neil/dataset/speedchallenge/data/train/" + str(labels[i][1]))
 
         for i in range(starting_index, starting_index + configs.LENGTH):
             img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg")
@@ -212,7 +216,7 @@ def visualize_accel(model_path, label_path, model_type):
             flow = helper.optical_flow(previous=previous, current=in_frame)
             inputs.append(flow)
 
-        previous = helper.load_image(configs.TEST_DIR + "frame" + str(starting_index + configs.LENGTH) + ".jpg")
+        previous = helper.load_image("/home/neil/dataset/speedchallenge/data/train/" + str(labels[i][1]))
 
         for i in range(starting_index + configs.LENGTH + 1, len(labels) - 1 - end_index):
 
@@ -220,7 +224,7 @@ def visualize_accel(model_path, label_path, model_type):
                 if event.type == pygame.QUIT:
                     break
 
-            img = helper.load_image(configs.TEST_DIR + "frame" + str(i) + ".jpg", resize=False)
+            img = helper.load_image("/home/neil/dataset/speedchallenge/data/train/" + str(labels[i][1]))
             in_frame = cv2.resize(img, (configs.IMG_WIDTH, configs.IMG_HEIGHT))
             flow = helper.optical_flow(previous, in_frame)
             inputs.pop(0)
@@ -228,7 +232,6 @@ def visualize_accel(model_path, label_path, model_type):
             pred_accel = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
             label_accel = (labels[i][2] - labels[i-1][2]) * 0.44704 / 0.05
             pygame_loop(label=label_accel, prediction=pred_accel, img=img)
-
     else:
         raise Exception('Sorry, the model type is not recognized')
 
@@ -236,4 +239,4 @@ def visualize_accel(model_path, label_path, model_type):
 if __name__ == "__main__":
 
     # test_loop(model_path='i3d_speed_comma_flow_32_9.h5', model_type='flow')
-    visualize_accel(label_path='/home/neil/dataset/speedchallenge/data/validation.csv', model_path='', model_type='rgb')
+    visualize_accel(label_path='/home/neil/dataset/speedchallenge/data/validation.csv', model_path='i3d_accel_rgb_32_1.h5', model_type='rgb')
