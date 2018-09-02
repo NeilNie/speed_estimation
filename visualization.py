@@ -27,6 +27,9 @@ clock = pygame.time.Clock()
 
 PI_RAD = (180 / np.pi)
 white = (255, 255, 255)
+red = (255, 102, 102)
+blue = (102, 178, 255)
+black = (0, 0, 0)
 
 # Create second screen with matplotlibs
 fig = pylab.figure(figsize=[6.4, 1.6], dpi=100)
@@ -40,8 +43,9 @@ b = []
 ax.legend(loc='upper left', fontsize=8)
 
 myFont = pygame.font.SysFont("monospace", 18)
-randNumLabel = myFont.render('Human Driving Speed:', 1, white)
-
+static_label1 = myFont.render('Model Prediction:', 1, white)
+static_label2 = myFont.render('Ground Truth:', 1, white)
+static_label3 = myFont.render('Abs. Error', 1, black)
 
 def test_loop(model_path, model_type):
 
@@ -63,7 +67,7 @@ def test_loop(model_path, model_type):
     files = os.listdir(configs.TEST_DIR)
 
     inputs = []
-    starting_index = 8000
+    starting_index = 9000
     end_index = 1000
 
     if model_type == 'rgb':
@@ -124,24 +128,16 @@ def test_loop(model_path, model_type):
 
 def pygame_loop(label, prediction, img):
 
-    # if prediction <= 10:
-    #     speed_label = myFont.render('Slow', 1, white)
-    # elif prediction > 10 and prediction <= 25:
-    #     speed_label = myFont.render('Medium', 1, white)
-    # elif prediction > 25 and prediction <= 40:
-    #     speed_label = myFont.render('Fast', 1, white)
-    # else:
-    #     speed_label = myFont.render('Very Fast', 1, white)
-
     if prediction < 0:
-        speed_label = myFont.render('Slowing', 1, white)
+        pred_label = myFont.render('Slowing', 1, white)
     else:
-        speed_label = myFont.render('Speeding', 1, white)
+        pred_label = myFont.render('Speeding', 1, white)
+    gt_label = myFont.render(str(label), 1, red)
+    pred_val = myFont.render(str(prediction), 1, blue)
+    error_label = myFont.render(str(abs(round((prediction - label), 3))), 1, black)
 
-    # a is prediction
-    # b is label
-    a.append(prediction)
-    # b.append(label)
+    a.append(prediction)    # a is prediction
+    b.append(label)         # b is label
     line1.set_ydata(a)
     line1.set_xdata(range(len(a)))
     line2.set_ydata(b)
@@ -160,11 +156,15 @@ def pygame_loop(label, prediction, img):
     # draw on
     pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
     screen.blit(camera_surface, (0, 0))
+    screen.blit(static_label3, (15, 15))
+    screen.blit(error_label, (15, 30))
+    screen.blit(static_label1, (50, 420))
+    screen.blit(pred_label, (280, 420))
+    screen.blit(pred_val, (50, 450))
 
-    diceDisplay = myFont.render(str(prediction), 1, white)
-    screen.blit(randNumLabel, (50, 420))
-    screen.blit(speed_label, (300, 420))
-    screen.blit(diceDisplay, (50, 450))
+    screen.blit(static_label2, (450, 420))
+    screen.blit(gt_label, (450, 450))
+
     clock.tick(60)
     pygame.display.flip()
 
@@ -203,7 +203,7 @@ def visualize_accel(model_path, label_path, model_type):
             inputs.pop(0)
             inputs.append(in_frame)
             pred_accel = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
-            label_accel = (labels[i][2] - labels[i - 1][2]) / 0.05 # * 0.44704 / 0.05
+            label_accel = (labels[i][2] - labels[i - 1][2]) * 20
             pygame_loop(label=label_accel, prediction=pred_accel, img=img)
 
     elif model_type == 'flow':
@@ -230,7 +230,7 @@ def visualize_accel(model_path, label_path, model_type):
             inputs.pop(0)
             inputs.append(flow)
             pred_accel = model.model.predict(np.array([np.asarray(inputs)]))[0][0]
-            label_accel = (labels[i][2] - labels[i-1][2]) * 0.44704 / 0.05
+            label_accel = (labels[i][2] - labels[i-1][2]) * 20
             pygame_loop(label=label_accel, prediction=pred_accel, img=img)
     else:
         raise Exception('Sorry, the model type is not recognized')
@@ -239,4 +239,4 @@ def visualize_accel(model_path, label_path, model_type):
 if __name__ == "__main__":
 
     # test_loop(model_path='i3d_speed_comma_flow_32_9.h5', model_type='flow')
-    visualize_accel(label_path='/home/neil/dataset/speedchallenge/data/validation.csv', model_path='i3d_accel_rgb_32_1.h5', model_type='rgb')
+    visualize_accel(label_path='/home/neil/dataset/speedchallenge/data/validation.csv', model_path='i3d_accel_rgb_32_4.h5', model_type='rgb')

@@ -4,15 +4,7 @@
     <list default="true" id="e08993bb-de0e-4ec1-bf6d-70eeb895b4b7" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/helper.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/flow_32_acc/2018-08-18 22:07:13.996875/events.out.tfevents.1534644445.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/flow_64_acc/2018-08-18 12:53:14.169050/events.out.tfevents.1534611207.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 21:45:26.317462/events.out.tfevents.1535334339.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 21:47:32.792754/events.out.tfevents.1535334464.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 22:16:35.874653/events.out.tfevents.1535336207.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 22:17:22.188026/events.out.tfevents.1535336253.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 22:26:56.151106/events.out.tfevents.1535336827.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 22:27:55.900066/events.out.tfevents.1535336887.neil-ML" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-26 22:28:27.867035/events.out.tfevents.1535336919.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-28 10:37:24.776302/events.out.tfevents.1535467056.neil-ML" beforeDir="false" afterPath="$PROJECT_DIR$/logs/rgb_32_accel/2018-08-28 10:37:24.776302/events.out.tfevents.1535467056.neil-ML" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/visualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualization.py" afterDir="false" />
     </list>
@@ -45,35 +37,35 @@
     <session id="-44977908">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="22" />
+          <entry key="project.closed" value="23" />
           <entry key="project.open.time.10" value="1" />
           <entry key="project.open.time.2" value="2" />
           <entry key="project.open.time.3" value="1" />
           <entry key="project.open.time.4" value="1" />
           <entry key="project.open.time.6" value="1" />
-          <entry key="project.open.time.7" value="15" />
+          <entry key="project.open.time.7" value="16" />
           <entry key="project.open.time.8" value="3" />
-          <entry key="project.opened" value="25" />
+          <entry key="project.opened" value="26" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="6285" />
+          <entry key="py" value="6831" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="6285" />
+          <entry key="Python" value="6831" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="27" />
+          <entry key="py" value="28" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="27" />
+          <entry key="Python" value="28" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.js.language.service.starts" />
@@ -171,17 +163,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/helper.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="176">
-              <caret line="341" lean-forward="true" selection-start-line="341" selection-end-line="341" />
+            <state relative-caret-position="199">
+              <caret line="335" column="48" selection-start-line="335" selection-start-column="48" selection-end-line="335" selection-end-column="48" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="271">
-              <caret line="32" column="46" selection-start-line="32" selection-start-column="46" selection-end-line="32" selection-end-column="46" />
+            <state relative-caret-position="243">
+              <caret line="30" column="34" selection-start-line="30" selection-start-column="25" selection-end-line="30" selection-end-column="34" />
               <folding>
                 <element signature="e#322#349#0" expanded="true" />
               </folding>
@@ -189,23 +181,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/i3d.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="274">
-              <caret line="99" column="49" selection-start-line="99" selection-start-column="49" selection-end-line="99" selection-end-column="49" />
-              <folding>
-                <element signature="e#388#418#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/visualization.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="37">
-              <caret line="217" lean-forward="true" selection-start-line="217" selection-end-line="217" />
+            <state relative-caret-position="-273">
+              <caret line="136" column="44" selection-start-line="136" selection-start-column="44" selection-end-line="136" selection-end-column="44" />
               <folding>
                 <element signature="e#106#151#0" expanded="true" />
               </folding>
@@ -241,6 +221,8 @@
       <find>TRAIN</find>
       <find>VAL_DIR</find>
       <find>'''</find>
+      <find>randNumLabel</find>
+      <find>speed_label</find>
     </findStrings>
     <replaceStrings>
       <replace>configs.Test_DIR</replace>
@@ -268,9 +250,9 @@
         <option value="$PROJECT_DIR$/i3d.py" />
         <option value="$PROJECT_DIR$/configs.py" />
         <option value="$PROJECT_DIR$/preprocessing.py" />
-        <option value="$PROJECT_DIR$/visualization.py" />
-        <option value="$PROJECT_DIR$/helper.py" />
         <option value="$PROJECT_DIR$/train.py" />
+        <option value="$PROJECT_DIR$/helper.py" />
+        <option value="$PROJECT_DIR$/visualization.py" />
       </list>
     </option>
   </component>
@@ -281,9 +263,10 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="y" value="23" />
-    <option name="width" value="2048" />
-    <option name="height" value="1129" />
+    <option name="x" value="54" />
+    <option name="y" value="-4" />
+    <option name="width" value="1547" />
+    <option name="height" value="905" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -327,10 +310,10 @@
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
+    <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -417,18 +400,17 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="54" y="-4" width="1547" height="905" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.63241106" visible="true" weight="0.16611074" />
-      <window_info id="Structure" order="1" sideWeight="0.36758894" side_tool="true" visible="true" weight="0.16611074" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.59683794" visible="true" weight="0.16811207" />
+      <window_info id="Structure" order="1" sideWeight="0.40316206" side_tool="true" visible="true" weight="0.16811207" />
       <window_info id="Favorites" order="2" sideWeight="0.37483266" side_tool="true" weight="0.23981296" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.3293011" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32860824" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3273196" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="TODO" order="6" weight="0.32931727" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.32860824" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="8" show_stripe_button="false" />
       <window_info active="true" anchor="bottom" id="Terminal" order="9" sideWeight="0.4963309" visible="true" weight="0.34793815" />
@@ -517,19 +499,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="390">
           <caret line="49" column="18" selection-start-line="49" selection-start-column="18" selection-end-line="49" selection-end-column="18" />
-          <folding>
-            <element signature="e#97#107#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/i3d.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="274">
-          <caret line="99" column="49" selection-start-line="99" selection-start-column="49" selection-end-line="99" selection-end-column="49" />
-          <folding>
-            <element signature="e#388#418#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -551,35 +520,49 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="390">
           <caret line="29" selection-start-line="29" selection-end-line="29" />
-          <folding>
-            <element signature="e#1#28#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/visualization.py">
+    <entry file="file://$PROJECT_DIR$/i3d.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="37">
-          <caret line="217" lean-forward="true" selection-start-line="217" selection-end-line="217" />
+        <state relative-caret-position="274">
+          <caret line="99" column="49" selection-start-line="99" selection-start-column="49" selection-end-line="99" selection-end-column="49" />
           <folding>
-            <element signature="e#106#151#0" expanded="true" />
+            <element signature="e#388#418#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/helper.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="341" lean-forward="true" selection-start-line="341" selection-end-line="341" />
+        <state relative-caret-position="199">
+          <caret line="335" column="48" selection-start-line="335" selection-start-column="48" selection-end-line="335" selection-end-column="48" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="271">
-          <caret line="32" column="46" selection-start-line="32" selection-start-column="46" selection-end-line="32" selection-end-column="46" />
+        <state relative-caret-position="243">
+          <caret line="30" column="34" selection-start-line="30" selection-start-column="25" selection-end-line="30" selection-end-column="34" />
           <folding>
             <element signature="e#322#349#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/keras/backend/tensorflow_backend.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="158">
+          <caret line="2630" selection-start-line="2630" selection-end-line="2630" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/visualization.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-273">
+          <caret line="136" column="44" selection-start-line="136" selection-start-column="44" selection-end-line="136" selection-end-column="44" />
+          <folding>
+            <element signature="e#106#151#0" expanded="true" />
           </folding>
         </state>
       </provider>

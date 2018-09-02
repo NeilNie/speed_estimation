@@ -18,14 +18,14 @@ import communication
 
 if __name__ == '__main__':
 
-    load_model_name = './i3d_accel_rgb_' + str(configs.LENGTH) + '_1.h5'
-    save_model_name = './i3d_accel_rgb_' + str(configs.LENGTH) + '_1.h5'
+    load_model_name = './i3d_accel_rgb_' + str(configs.LENGTH) + '_3.h5'
+    save_model_name = './i3d_accel_rgb_' + str(configs.LENGTH) + '_4.h5'
 
     labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/data.csv').values
     val_labels = pd.read_csv('/home/neil/dataset/speedchallenge/data/validation.csv').values
 
-    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3))
-                           # weights_path=load_model_name)
+    i3d_flow = Inception3D(input_shape=(configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 3),
+                           weights_path=load_model_name)
     i3d_flow.summary()
 
     i3d_flow.train(type='rgb_accel', labels=labels,
