@@ -334,7 +334,60 @@ def comma_accel_batch_generator(data, batch_size, augment=False):
 
             images[c] = imgs
             labels[c] = (speed - pre_speed) * 20 # frame rate
+            c += 1
 
+            if c == batch_size:
+                break
+
+        yield images, labels
+
+
+def comma_flow_accel_batch_gen(batch_size, data):
+    """
+    Generate training images given image paths and associated steering angles
+
+       :param data         : (numpy.array) the loaded data (converted to list from pandas format)
+       :param batch_size   :  (int) batch size for training
+
+       :rtype: Iterator[images, angles] images for training the corresponding steering angles
+    """
+
+    images = np.empty([batch_size, configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2], dtype=np.int32)
+    labels = np.empty([batch_size])
+
+    while True:
+
+        c = 0
+
+        for index in np.random.permutation(data.shape[0]):
+
+            imgs = np.empty([configs.LENGTH, configs.IMG_HEIGHT, configs.IMG_WIDTH, 2], dtype=np.int32)
+
+            if index < configs.LENGTH + 1:
+                start = 0
+                end = configs.LENGTH + 1
+            elif index + configs.LENGTH + 1 >= len(data):
+                start = len(data) - configs.LENGTH - 1
+                end = len(data) - 1
+            else:
+                start = index
+                end = index + configs.LENGTH + 1
+
+            grays = []
+            for i in range(start, end):
+                path = "/home/neil/dataset/speedchallenge/data/train/" + str(data[i][1])
+                gray = load_gray_image(path)
+                grays.append(gray)
+
+            current = grays[0]
+            for i in range(1, len(grays)):
+                flow = cv2.calcOpticalFlowFarneback(current, grays[i], None, 0.5, 3, 15, 3, 5, 1.5, 0)
+                current = grays[i]
+                imgs[i - 1] = flow
+
+            accel = (data[end][2] - data[end-1][2]) * 20
+            images[c] = imgs
+            labels[c] = accel
             c += 1
 
             if c == batch_size:

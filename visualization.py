@@ -67,7 +67,7 @@ def test_loop(model_path, model_type):
     files = os.listdir(configs.TEST_DIR)
 
     inputs = []
-    starting_index = 9000
+    starting_index = 1000
     end_index = 1000
 
     if model_type == 'rgb':
@@ -179,7 +179,7 @@ def visualize_accel(model_path, label_path, model_type):
     labels = pd.read_csv(label_path).values
 
     inputs = []
-    starting_index = 1
+    starting_index = 2000
     end_index = 0
     # init_speed = labels[starting_index][2]
 

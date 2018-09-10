@@ -30,9 +30,9 @@ if __name__ == '__main__':
 
     i3d_flow.train(type='rgb_accel', labels=labels,
                    val_labels=val_labels,
-                   epochs=10, epoch_steps=1000,
-                   validation=True, val_steps=500,
+                   epochs=7, epoch_steps=1000,
+                   validation=True, val_steps=800,
                    save_path=save_model_name,
-                   log_path='logs/rgb_32_accel')
+                   log_path='logs/rgb_64_accel')
 
     communication.notify_training_completion(save_model_name)
