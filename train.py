@@ -11,10 +11,10 @@
 # Contact: contact@neilnie.com
 #
 
-from i3d import Inception3D
-import configs
+from models.i3d import Inception3D
+import utils.configs as configs
 import pandas as pd
-import communication
+import utils.communication as communication
 
 if __name__ == '__main__':
 
