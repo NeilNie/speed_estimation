@@ -3,11 +3,31 @@
   <component name="ChangeListManager">
     <list default="true" id="e08993bb-de0e-4ec1-bf6d-70eeb895b4b7" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/configs.py" beforeDir="false" afterPath="$PROJECT_DIR$/configs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/helper.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/i3d.py" beforeDir="false" afterPath="$PROJECT_DIR$/i3d.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:53:02.785166/events.out.tfevents.1532569983.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:53:35.405391/events.out.tfevents.1532570016.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:55:10.906728/events.out.tfevents.1532570112.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:55:49.388240/events.out.tfevents.1532570150.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:57:14.466848/events.out.tfevents.1532570235.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:58:08.874758/events.out.tfevents.1532570290.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:59:07.662839/events.out.tfevents.1532570349.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:59:41.861784/events.out.tfevents.1532570383.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 21:59:54.037507/events.out.tfevents.1532570395.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 22:59:22.089666/events.out.tfevents.1532573963.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/conv/2018-07-25 23:25:46.187635/events.out.tfevents.1532575547.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-29 10:10:56.547938/events.out.tfevents.1532873469.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-29 11:37:07.548621/events.out.tfevents.1532878637.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-29 14:04:30.643355/events.out.tfevents.1532887481.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-29 18:03:28.964273/events.out.tfevents.1532901819.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-29 21:20:44.027333/events.out.tfevents.1532913654.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-30 10:40:23.490107/events.out.tfevents.1532961635.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-30 13:11:11.023347/events.out.tfevents.1532970682.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-30 17:43:28.769490/events.out.tfevents.1532987019.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-30 23:01:54.792092/events.out.tfevents.1533006126.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-30 23:03:36.949263/events.out.tfevents.1533006229.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-30 23:04:39.260201/events.out.tfevents.1533006290.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-31 10:49:38.196042/events.out.tfevents.1533048588.neil-ML" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/flow/2018-07-31 14:16:36.155058/events.out.tfevents.1533061006.neil-ML" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualization.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -38,35 +58,35 @@
     <session id="-44977908">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="29" />
+          <entry key="project.closed" value="32" />
           <entry key="project.open.time.10" value="1" />
           <entry key="project.open.time.2" value="2" />
           <entry key="project.open.time.3" value="1" />
           <entry key="project.open.time.4" value="1" />
-          <entry key="project.open.time.6" value="4" />
-          <entry key="project.open.time.7" value="18" />
+          <entry key="project.open.time.6" value="5" />
+          <entry key="project.open.time.7" value="20" />
           <entry key="project.open.time.8" value="3" />
-          <entry key="project.opened" value="31" />
+          <entry key="project.opened" value="34" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="7117" />
+          <entry key="py" value="7148" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="7117" />
+          <entry key="Python" value="7148" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="31" />
+          <entry key="py" value="32" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="31" />
+          <entry key="Python" value="32" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.js.language.service.starts" />
@@ -164,8 +184,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/helper.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="422">
-              <caret line="343" selection-start-line="343" selection-end-line="343" />
+            <state relative-caret-position="5070">
+              <caret line="344" column="4" selection-start-line="344" selection-start-column="4" selection-end-line="344" selection-end-column="4" />
               <folding>
                 <marker date="1536011227837" expanded="true" signature="10773:12527" ph="..." />
               </folding>
@@ -176,8 +196,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="352">
-              <caret line="35" column="48" lean-forward="true" selection-start-line="35" selection-start-column="48" selection-end-line="35" selection-end-column="48" />
+            <state relative-caret-position="187">
+              <caret line="24" column="61" selection-start-line="24" selection-start-column="61" selection-end-line="24" selection-end-column="61" />
               <folding>
                 <element signature="e#322#349#0" expanded="true" />
               </folding>
@@ -186,22 +206,22 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/configs.py">
+        <entry file="file://$PROJECT_DIR$/i3d.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="60">
-              <caret line="4" column="11" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
+            <state relative-caret-position="3900">
+              <caret line="275" column="8" selection-start-line="275" selection-start-column="8" selection-end-line="275" selection-end-column="8" />
+              <folding>
+                <element signature="e#388#418#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/visualization.py">
+        <entry file="file://$PROJECT_DIR$/configs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2565">
-              <caret line="181" column="22" selection-start-line="181" selection-start-column="22" selection-end-line="181" selection-end-column="22" />
-              <folding>
-                <element signature="e#106#151#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="165">
+              <caret line="11" selection-start-line="11" selection-end-line="11" />
             </state>
           </provider>
         </entry>
@@ -264,8 +284,8 @@
         <option value="$PROJECT_DIR$/visualization.py" />
         <option value="$PROJECT_DIR$/i3d.py" />
         <option value="$PROJECT_DIR$/helper.py" />
-        <option value="$PROJECT_DIR$/configs.py" />
         <option value="$PROJECT_DIR$/train.py" />
+        <option value="$PROJECT_DIR$/configs.py" />
       </list>
     </option>
   </component>
@@ -308,6 +328,23 @@
               <item name="speed_challenge" type="b2602c69:ProjectViewProjectNode" />
               <item name="speed_challenge" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="speed_challenge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="speed_challenge" type="462c0819:PsiDirectoryNode" />
+              <item name="logs" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="speed_challenge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="speed_challenge" type="462c0819:PsiDirectoryNode" />
+              <item name="logs" type="462c0819:PsiDirectoryNode" />
+              <item name="flow_64_accel" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="speed_challenge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="speed_challenge" type="462c0819:PsiDirectoryNode" />
+              <item name="logs" type="462c0819:PsiDirectoryNode" />
+              <item name="rgb_32_accel" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -317,7 +354,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../self-driving-golf-cart" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
@@ -414,8 +451,8 @@
   <component name="ToolWindowManager">
     <frame x="54" y="-4" width="1547" height="905" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49112427" visible="true" weight="0.17945297" />
-      <window_info id="Structure" order="1" sideWeight="0.5088757" side_tool="true" visible="true" weight="0.17945297" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48565573" visible="true" weight="0.1874583" />
+      <window_info id="Structure" order="1" sideWeight="0.5143443" side_tool="true" visible="true" weight="0.1874583" />
       <window_info id="Favorites" order="2" sideWeight="0.37483266" side_tool="true" weight="0.23981296" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32860824" />
@@ -426,7 +463,7 @@
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32860824" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="8" show_stripe_button="false" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="9" sideWeight="0.49566376" visible="true" weight="0.3466495" />
+      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.49566376" visible="true" weight="0.371134" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.50433624" side_tool="true" weight="0.3466495" />
       <window_info anchor="bottom" id="Version Control" order="11" weight="0.32860824" />
       <window_info anchor="bottom" id="Python Console" order="12" sideWeight="0.49899933" weight="0.32860824" />
@@ -543,47 +580,44 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/i3d.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="803">
-          <caret line="89" column="11" selection-start-line="89" selection-start-column="11" selection-end-line="89" selection-end-column="11" />
-          <folding>
-            <element signature="e#388#418#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/visualization.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2565">
+        <state relative-caret-position="15">
           <caret line="181" column="22" selection-start-line="181" selection-start-column="22" selection-end-line="181" selection-end-column="22" />
-          <folding>
-            <element signature="e#106#151#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/helper.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="422">
-          <caret line="343" selection-start-line="343" selection-end-line="343" />
+        <state relative-caret-position="5070">
+          <caret line="344" column="4" selection-start-line="344" selection-start-column="4" selection-end-line="344" selection-end-column="4" />
           <folding>
             <marker date="1536011227837" expanded="true" signature="10773:12527" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/i3d.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3900">
+          <caret line="275" column="8" selection-start-line="275" selection-start-column="8" selection-end-line="275" selection-end-column="8" />
+          <folding>
+            <element signature="e#388#418#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/configs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="11" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
+        <state relative-caret-position="165">
+          <caret line="11" selection-start-line="11" selection-end-line="11" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="352">
-          <caret line="35" column="48" lean-forward="true" selection-start-line="35" selection-start-column="48" selection-end-line="35" selection-end-column="48" />
+        <state relative-caret-position="187">
+          <caret line="24" column="61" selection-start-line="24" selection-start-column="61" selection-end-line="24" selection-end-column="61" />
           <folding>
             <element signature="e#322#349#0" expanded="true" />
           </folding>
